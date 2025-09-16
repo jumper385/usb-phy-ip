@@ -44,14 +44,14 @@ architecture rtl of top is
 	signal utmi_din : std_logic_vector(7 downto 0);
 	signal utmi_rxvalid : std_logic;
 	signal utmi_rxactive : std_logic;
-	signal utmi rxerror : std_logic;
+	signal utmi_rxerror : std_logic;
 	signal utmi_line_state : std_logic_vector(1 downto 0);
 	signal utmi_usb_rst : std_logic;
 
 begin
 
-	usb_dp <= txdp if txoe = '0' else 'Z';
-	usb_dn <= txdn if txoe = '0' else 'Z';
+	usb_dp <= txdp when txoe = '0' else 'Z';
+	usb_dn <= txdn when txoe = '0' else 'Z';
 	rxdp <= usb_dp;
 	rxdn <= usb_dn;
 	rxd <= usb_dp;
