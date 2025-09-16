@@ -1,4 +1,5 @@
 ## How to Setup Builder
+This builder was tested on Ubuntu Server 24.04 LTS. 
 
 yosys setup
 ```
