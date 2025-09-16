@@ -1,0 +1,10 @@
+plugin -i /usr/local/share/yosys/plugins/ghdl.so
+
+ghdl --std=08 -fsynopsys -frelaxed-rules \
+	vhdl/usb_phy.vhdl \
+	vhdl/usb_rx_phy_60MHz.vhdl \
+	vhdl/usb_tx_phy.vhdl \
+	-e usb_phy; synth_ice40 -json usb_phy.json
+
+proc; opt; 
+stat;
