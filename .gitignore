@@ -1,3 +1,6 @@
 *.json
 *.cf
 *.swp
+*.asc
+*.bin
+*.json

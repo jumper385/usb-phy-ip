@@ -1,0 +1,9 @@
+#set_io clk_60 35
+#set_io rst_n 18
+#set_io usb_dp 10
+#set_io usb_dn 9
+#set_io led 40
+
+set_io clk_in 35
+set_io clk_out 40
+set_io pulse_on_ctrl 18
