@@ -108,7 +108,7 @@ BEGIN
 	rxdp <= usb_dp;
 	rxdn <= usb_dn;
 
-	usb_pu <= '1';
+	usb_pu <= '1'; -- note: icesugar has the pull routed to a pin... annoyingly
 
 	rx_valid <= utmi_rxvalid;
 	dbg_io <= utmi_line_state(0);
