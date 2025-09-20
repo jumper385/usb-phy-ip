@@ -18,6 +18,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: install ice40 build reqs
+	run: |
+		apt update
+		apt install nextpnr-ice40 iverilog gtkwave fpga-icestorm
+		
+
       - name: Run Yosys+GHDL (single command)
         run: |
           yosys -V
