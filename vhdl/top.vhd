@@ -67,7 +67,6 @@ ARCHITECTURE rtl OF top IS
 	SIGNAL clk_hf : std_logic;
 
 BEGIN
-	-- simple tie-offs to keep logic from being optimized away
 	led <= NOT rst_n;
 
 	rxd <= rxdp;
@@ -111,6 +110,6 @@ BEGIN
 	usb_pu <= '1'; -- note: icesugar has the pull routed to a pin... annoyingly
 
 	rx_valid <= utmi_rxvalid;
-	dbg_io <= utmi_line_state(0);
+	dbg_io <= utmi_rxvalid;
 
 END ARCHITECTURE;

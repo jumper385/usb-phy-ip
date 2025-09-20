@@ -1,19 +1,16 @@
 plugin -i /usr/local/share/yosys/plugins/ghdl.so
 
-# Import VHDL design (no JSON yet)
-#read_verilog \
-#	verilog/and2.v \
-#	verilog/or2.v \
-#	verilog/timescale.v \
-#	verilog/usb_phy.v \
-#	verilog/usb_rx_phy.v \
-#	verilog/usb_tx_phy.v
+#  Import VHDL design (no JSON yet)
+read_verilog \
+ 	verilog/and2.v \
+ 	verilog/or2.v \
+ 	verilog/timescale.v \
+ 	verilog/usb_phy.v \
+ 	verilog/usb_rx_phy.v \
+ 	verilog/usb_tx_phy.v
 
 ghdl --std=08 -fsynopsys -frelaxed-rules \
 	vhdl/top.vhd \
-	vhdl/usb_rx_phy.vhdl \
-	vhdl/usb_tx_phy.vhdl \
-	vhdl/usb_phy.vhdl \
 	-e top;
 
 # Run synth to iCE40 but keep working design in memory
