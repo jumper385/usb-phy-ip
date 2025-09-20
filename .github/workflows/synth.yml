@@ -1,0 +1,47 @@
+# .github/workflows/synth.yml
+name: Synthesize (Yosys+GHDL)
+
+on:
+  push:
+    paths: ["**/*.vhd", "**/*.vhdl", "**/*.v", "scripts/**", ".github/workflows/synth.yml"]
+  pull_request:
+
+jobs:
+  synth:
+    runs-on: ubuntu-latest
+
+    # Run the whole job inside the Docker image that already has yosys+ghdl
+    container:
+      image: hdlc/ghdl:yosys
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Yosys+GHDL (single command)
+        run: |
+          yosys -V
+          yosys -s scripts/synth.ys
+
+      # Or, if you prefer to run your own script instead of the inline command:
+      # - name: Run build script
+      #   run: |
+      #     chmod +x scripts/build.sh
+      #     scripts/build.sh
+
+      # Optionally run nextpnr/icepack if your container/script provides them
+      # - name: Place & pack (optional)
+      #   run: |
+      #     nextpnr-ice40 --up5k --package sg48 --json build/leds.json --pcf io.pcf --asc build/leds.asc
+      #     icepack build/leds.asc build/leds.bin
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: synth-artifacts
+          path: |
+            build/*
+            *.json
+            *.asc
+            *.bin
+
