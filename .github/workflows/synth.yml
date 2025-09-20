@@ -19,7 +19,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: install ice40 deps
-        run: apt update && apt install nextpnr-ice40 iverilog gtkwave fpga-icestorm
+        run: apt update && apt install nextpnr-ice40 iverilog gtkwave fpga-icestorm -y
 
       - name: Run Yosys+GHDL (single command)
         run: |
