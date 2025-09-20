@@ -1,7 +1,7 @@
 set_io rst_n 19
 
-set_io rxdp 10 --pullup yes
-set_io rxdn 9 --pulldown yes
+set_io usb_dp 10 --pullup yes
+set_io usb_dn 9 --pulldown yes
 
 set_io usb_pu 11
 set_io led 40

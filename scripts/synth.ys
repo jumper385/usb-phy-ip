@@ -26,7 +26,7 @@ clean -purge
 # Emit clean JSON for nextpnr
 write_json top.json
 
-!nextpnr-ice40 --up5k --package sg48 --json top.json --pcf io.pcf --asc top.asc --pcf-allow-unconstrained
+!nextpnr-ice40 --up5k --package sg48 --json top.json --pcf io.pcf --asc top.asc
 
 # Emit bitstream for programming
 !icepack top.asc top.bin

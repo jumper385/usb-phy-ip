@@ -6,10 +6,8 @@ ENTITY top IS
 	PORT (
 		rst_n : IN STD_LOGIC;
 		usb_pu : OUT STD_LOGIC;
-		rxdp : in std_logic;
-		rxdn : in std_logic;
-		txdp : out std_logic;
-		txdn : out std_logic;
+		usb_dp : inout std_logic;
+		usb_dn : inout std_logic;
 		led : OUT STD_LOGIC;
 
 		rx_valid : OUT STD_LOGIC;
@@ -60,6 +58,11 @@ ARCHITECTURE rtl OF top IS
 	SIGNAL utmi_rxerror : STD_LOGIC;
 	SIGNAL utmi_line_state : STD_LOGIC_VECTOR(1 DOWNTO 0);
 	SIGNAL utmi_usb_rst : STD_LOGIC;
+
+	SIGNAL rxdp : std_logic;
+	SIGNAL rxdn : std_logic;
+	SIGNAL txdp : std_logic;
+	SIGNAL txdn : std_logic;
 	
 	SIGNAL clk_hf : std_logic;
 
@@ -98,6 +101,13 @@ BEGIN
 		RxError_o => utmi_rxerror,
 		LineState_o => utmi_line_state
 	);
+
+	usb_dp <= txdp when txoe = '0' else 'Z'; -- ffs. txoe must be low to transmit
+	usb_dn <= txdn when txoe = '0' else 'Z';
+
+	rxdp <= usb_dp;
+	rxdn <= usb_dn;
+
 	usb_pu <= '1';
 
 	rx_valid <= utmi_rxvalid;
