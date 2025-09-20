@@ -5,8 +5,11 @@ USE ieee.numeric_std.ALL;
 ENTITY top IS
 	PORT (
 		rst_n : IN STD_LOGIC;
-		usb_dp : INOUT STD_LOGIC;
-		usb_dn : INOUT STD_LOGIC;
+		usb_pu : OUT STD_LOGIC;
+		rxdp : in std_logic;
+		rxdn : in std_logic;
+		txdp : out std_logic;
+		txdn : out std_logic;
 		led : OUT STD_LOGIC;
 
 		rx_valid : OUT STD_LOGIC;
@@ -15,14 +18,6 @@ ENTITY top IS
 END ENTITY;
 
 ARCHITECTURE rtl OF top IS
-
-  	component and2 is
-		port ( a: in std_logic; b: in std_logic; y: out std_logic );
-	end component;
-
-	component or2 is
-		port ( a: in std_logic; b: in std_logic; y: out std_logic );
-	end component;	
 
 	COMPONENT usb_phy
 		PORT (
@@ -53,8 +48,8 @@ ARCHITECTURE rtl OF top IS
 	END COMPONENT;
 
 	-- signals ...
-	SIGNAL txdp, txdn, txoe : STD_LOGIC;
-	SIGNAL rxdp, rxdn, rxd : STD_LOGIC;
+	SIGNAL txoe : STD_LOGIC;
+	SIGNAL rxd : STD_LOGIC;
 
 	SIGNAL utmi_dout : STD_LOGIC_VECTOR(7 DOWNTO 0) := (OTHERS => '0');
 	SIGNAL utmi_txvalid : STD_LOGIC := '0';
@@ -68,17 +63,11 @@ ARCHITECTURE rtl OF top IS
 	
 	SIGNAL clk_hf : std_logic;
 
-	SIGNAL a, b, c, d: std_logic;
-
 BEGIN
 	-- simple tie-offs to keep logic from being optimized away
 	led <= NOT rst_n;
 
-	usb_dp <= txdp WHEN txoe = '1' ELSE '1';
-	usb_dn <= txdn WHEN txoe = '1' ELSE '1';
-	rxdp <= usb_dp WHEN txoe = '0' ELSE 'Z' ;
-	rxdn <= usb_dn WHEN txoe = '0' ELSE 'Z' ;
-	rxd <= usb_dp;
+	rxd <= rxdp;
 
 	u_osc : SB_HFOSC
 	GENERIC MAP(CLKHF_DIV => "0b00")
@@ -91,8 +80,8 @@ BEGIN
 	u_phy : usb_phy
 	PORT MAP(
 		clk => clk_hf,
-		rst => '1', -- invert if the USB core expects active-high
-		phy_tx_mode => '1',
+		rst => '1',
+		phy_tx_mode => '0',
 		usb_rst => utmi_usb_rst,
 		rxd => rxd,
 		rxdp => rxdp,
@@ -109,15 +98,9 @@ BEGIN
 		RxError_o => utmi_rxerror,
 		LineState_o => utmi_line_state
 	);
-
-	a <= '1';	
-	b <= '0';
-	d <= '1';
-
-  	u_and: and2 port map(a => a, b => b, y => c);
-	u_or : or2  port map(a => c, b => d, y => dbg_io);
+	usb_pu <= '1';
 
 	rx_valid <= utmi_rxvalid;
-	-- dbg_io <= utmi_usb_rst;
+	dbg_io <= utmi_line_state(0);
 
 END ARCHITECTURE;
