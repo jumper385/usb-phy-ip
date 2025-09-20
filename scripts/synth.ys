@@ -1,0 +1,32 @@
+plugin -i /usr/local/share/yosys/plugins/ghdl.so
+
+# Import VHDL design (no JSON yet)
+read_verilog \
+	verilog/and2.v \
+	verilog/or2.v
+
+ghdl --std=08 -fsynopsys -frelaxed-rules \
+	vhdl/usb_phy.vhdl \
+	vhdl/usb_rx_phy.vhdl \
+	vhdl/usb_tx_phy.vhdl \
+	vhdl/top.vhd \
+	-e top;
+
+# Run synth to iCE40 but keep working design in memory
+synth_ice40 -top top 
+
+# Ensure non-hardware metadata cells are removed
+delete t:$scopeinfo
+clean -purge
+
+# Emit clean JSON for nextpnr
+write_json top.json
+
+!nextpnr-ice40 --up5k --package sg48 --json top.json --pcf io.pcf --asc top.asc
+
+# Emit bitstream for programming
+!icepack top.asc top.bin
+
+# Optional stats
+proc; opt; 
+stat;
