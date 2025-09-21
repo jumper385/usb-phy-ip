@@ -12,7 +12,7 @@ read_verilog \
 ghdl --std=08 -fsynopsys -frelaxed-rules \
 	vhdl/top.vhd \
 	vhdl/pid_detector.vhd \
-	vhdl/ack_sender.vhd \
+	vhdl/handshake_sender.vhd \
 	-e top;
 
 # Run synth to iCE40 but keep working design in memory

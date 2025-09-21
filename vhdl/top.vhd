@@ -74,14 +74,20 @@ ARCHITECTURE rtl OF top IS
 		);
 	END COMPONENT;
 
-	COMPONENT ack_sender
+	COMPONENT handshake_sender
 		PORT (
+			en : in std_logic;
+
 			clk : IN STD_LOGIC;
 			utmi_dout_o : OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
 			utmi_txvalid_o : OUT STD_LOGIC;
 
-			send_trigger_i : IN STD_LOGIC;
-			utmi_txrdy_i : IN STD_LOGIC
+			setup_detected_i : in std_logic;	
+			data_detected_i : in std_logic;
+			in_detected_i : in std_logic;
+			utmi_txrdy_i : IN STD_LOGIC;
+
+			dbg_state_o : out std_logic_vector(2 downto 0)
 		);
 	END COMPONENT;
 
@@ -107,6 +113,10 @@ ARCHITECTURE rtl OF top IS
 	SIGNAL clk_hf : STD_LOGIC;
 	SIGNAL setup_detected : STD_LOGIC;
 	SIGNAL data_detected : STD_LOGIC;
+	SIGNAL in_detected : std_logic;
+	SIGNAL handshake_trig : STD_LOGIC;
+
+	SIGNAL dbg_state : std_logic_vector(2 downto 0);
 
 BEGIN
 	led <= NOT rst_n;
@@ -126,7 +136,7 @@ BEGIN
 		-- phy control
 		clk => clk_hf,
 		rst => '1',
-		phy_tx_mode => '0',
+		phy_tx_mode => '1',
 		usb_rst => utmi_usb_rst,
 
 		-- usb interface
@@ -152,6 +162,7 @@ BEGIN
 		LineState_o => utmi_line_state
 	);
 
+
 	setup_detector : pid_detector
 	PORT MAP(
 		utmi_din => utmi_din,
@@ -174,13 +185,15 @@ BEGIN
 		pid_detected_o => data_detected
 	);
 
-	ack_sender_inst : ack_sender
+	in_detector : pid_detector
 	PORT MAP(
-		clk => clk_hf,
-		utmi_dout_o => utmi_dout,
-		utmi_txvalid_o => utmi_txvalid,
-		send_trigger_i => data_detected,
-		utmi_txrdy_i => utmi_txrdy
+		utmi_din => utmi_din,
+		utmi_rxvalid => utmi_rxvalid,
+		utmi_rxactive => utmi_rxactive,
+		utmi_rxerror => utmi_rxerror,
+
+		pid_filter_i => x"69",
+		pid_detected_o => in_detected
 	);
 
 	-- D+ buffer
@@ -209,11 +222,30 @@ BEGIN
 		D_IN_0 => rxdn
 	);
 
+	handshake_trig <= setup_detected or data_detected;
+
+	hs_sender_inst : handshake_sender
+	PORT MAP(
+		en => rst_n,
+		clk => clk_hf,
+
+		utmi_dout_o => utmi_dout,
+		utmi_txvalid_o => utmi_txvalid,
+
+		setup_detected_i => setup_detected, 
+		data_detected_i => data_detected,
+		in_detected_i => in_detected,
+		utmi_txrdy_i => utmi_txrdy,
+		
+		dbg_state_o => dbg_state
+	);
+
+
 	usb_pu <= '1'; -- note: icesugar has the pull routed to a pin... annoyingly
 
 	rx_valid <= utmi_rxvalid;
-	dbg_io1 <= utmi_rxactive;
-	dbg_io2 <= txoe;
+	dbg_io1 <= in_detected;
+	dbg_io2 <= utmi_txrdy;
 
 	usb_feedthrough_dp_o <= utmi_line_state(0); -- for test jig
 	usb_feedthrough_dn_o <= utmi_line_state(1); -- for test jig
