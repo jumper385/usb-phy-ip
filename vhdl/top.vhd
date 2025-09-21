@@ -245,7 +245,7 @@ BEGIN
 
 	rx_valid <= utmi_rxvalid;
 	dbg_io1 <= in_detected;
-	dbg_io2 <= utmi_txrdy;
+	dbg_io2 <= data_detected;
 
 	usb_feedthrough_dp_o <= utmi_line_state(0); -- for test jig
 	usb_feedthrough_dn_o <= utmi_line_state(1); -- for test jig

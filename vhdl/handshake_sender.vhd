@@ -22,7 +22,7 @@ ENTITY handshake_sender IS
 END ENTITY;
 
 ARCHITECTURE rtl OF handshake_sender IS
-	TYPE fsm_states is (IDLE, SETUP_DETECTED, DATA_DETECTED, SEND_ACK, IN_DETECTED, SEND_NAK, SEND_DATA, ACK_DETECTED);
+	TYPE fsm_states is (IDLE, SEND_ACK, SEND_NAK);
 	SIGNAL cs, ns : fsm_states;
 
 	constant PID_ACK   : std_logic_vector(7 downto 0) := x"D2";
@@ -43,76 +43,41 @@ BEGIN
 	process (cs, setup_detected_i, data_detected_i, in_detected_i, utmi_txrdy_i)
 	begin
 		case cs is
-
 			when IDLE =>
 				utmi_dout_o <= x"00";
 				utmi_txvalid_o <= '0';
-
-				if setup_detected_i then
-					ns <= SETUP_DETECTED;	
-				end if;
-
-				if data_detected_i then
-					ns <= DATA_DETECTED;
+				if setup_detected_i='1' or data_detected_i='1' then
+					ns <= SEND_ACK;
+				elsif in_detected_i='1' then
+					ns <= SEND_NAK;
 				else
-					ns <= cs;
+					ns <= IDLE;
 				end if;
-
-			when SETUP_DETECTED => 
-				
-				utmi_dout_o <= x"00";
-				utmi_txvalid_o <= '0';
-				
-				if data_detected_i then
-					ns <= DATA_DETECTED;
-				else
-					ns <= cs;
-				end if;
-
-			when DATA_DETECTED => 
-				
-				utmi_dout_o <= x"00";
-				utmi_txvalid_o <= '0';
-				
-				ns <= SEND_ACK;
 			
-			when SEND_ACK => 
+			when SEND_ACK =>
+				utmi_dout_o <= PID_ACK;
+				utmi_txvalid_o <= '1';
 				
 				if not utmi_txrdy_i then
-					utmi_dout_o <= x"00";
-					utmi_txvalid_o <= '0';
-				else
-					utmi_dout_o <= PID_ACK;
-					utmi_txvalid_o <= '1';
-				end if;
-				
-				if in_detected_i then
-					ns <= IN_DETECTED;
+					ns <= IDLE;
 				else
 					ns <= cs;
-				end if;	
-				
-			when IN_DETECTED =>
-				utmi_dout_o <= x"00";
-				utmi_txvalid_o <= '0';
-				
-				ns <= SEND_NAK;
-			
+				end if;
+
 			when SEND_NAK =>
 				utmi_dout_o <= PID_NAK;
 				utmi_txvalid_o <= '1';
-
-				if in_detected_i then
-					ns <= IN_DETECTED;
+				
+				if not utmi_txrdy_i then
+					ns <= IDLE;
 				else
 					ns <= cs;
-				end if;	
+				end if;
 
 			when others => 
 				utmi_dout_o <= x"00";
 				utmi_txvalid_o <= '0';
 				ns <= IDLE;
-
 		end case;
 	end process;
 	
