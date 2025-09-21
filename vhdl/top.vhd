@@ -6,16 +6,42 @@ ENTITY top IS
 	PORT (
 		rst_n : IN STD_LOGIC;
 		usb_pu : OUT STD_LOGIC;
-		usb_dp : inout std_logic;
-		usb_dn : inout std_logic;
+		usb_dp : INOUT STD_LOGIC;
+		usb_dn : INOUT STD_LOGIC;
 		led : OUT STD_LOGIC;
 
 		rx_valid : OUT STD_LOGIC;
-		dbg_io : OUT STD_LOGIC
+		dbg_io1 : OUT STD_LOGIC;
+		dbg_io2 : OUT STD_LOGIC;
+
+		usb_feedthrough_dp_o : OUT STD_LOGIC; -- for test jig
+		usb_feedthrough_dn_o : OUT STD_LOGIC  -- for test jig
 	);
 END ENTITY;
 
 ARCHITECTURE rtl OF top IS
+
+	COMPONENT SB_IO
+		GENERIC (
+			PIN_TYPE : INTEGER := 41; -- 0b101001: simple bidir, D_OUT_0 + D_IN_0 + OE
+			PULLUP : INTEGER := 0
+		);
+		PORT (
+			PACKAGE_PIN : INOUT STD_LOGIC;
+			D_OUT_0 : IN STD_LOGIC;
+			OUTPUT_ENABLE : IN STD_LOGIC;
+			D_IN_0 : OUT STD_LOGIC
+		);
+	END COMPONENT;
+
+	COMPONENT SB_HFOSC
+		GENERIC (CLKHF_DIV : STRING := "0b00");
+		PORT (
+			CLKHFEN : IN STD_LOGIC;
+			CLKHFPU : IN STD_LOGIC;
+			CLKHF : OUT STD_LOGIC
+		);
+	END COMPONENT;
 
 	COMPONENT usb_phy
 		PORT (
@@ -36,12 +62,26 @@ ARCHITECTURE rtl OF top IS
 		);
 	END COMPONENT;
 
-	COMPONENT SB_HFOSC
-		GENERIC (CLKHF_DIV : STRING := "0b00");
+	COMPONENT pid_detector
 		PORT (
-			CLKHFEN : IN STD_LOGIC;
-			CLKHFPU : IN STD_LOGIC;
-			CLKHF : OUT STD_LOGIC
+			utmi_din : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
+			utmi_rxvalid : IN STD_LOGIC;
+			utmi_rxactive : IN STD_LOGIC;
+			utmi_rxerror : IN STD_LOGIC;
+
+			pid_filter_i : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
+			pid_detected_o : OUT STD_LOGIC
+		);
+	END COMPONENT;
+
+	COMPONENT ack_sender
+		PORT (
+			clk : IN STD_LOGIC;
+			utmi_dout_o : OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
+			utmi_txvalid_o : OUT STD_LOGIC;
+
+			send_trigger_i : IN STD_LOGIC;
+			utmi_txrdy_i : IN STD_LOGIC
 		);
 	END COMPONENT;
 
@@ -59,12 +99,14 @@ ARCHITECTURE rtl OF top IS
 	SIGNAL utmi_line_state : STD_LOGIC_VECTOR(1 DOWNTO 0);
 	SIGNAL utmi_usb_rst : STD_LOGIC;
 
-	SIGNAL rxdp : std_logic;
-	SIGNAL rxdn : std_logic;
-	SIGNAL txdp : std_logic;
-	SIGNAL txdn : std_logic;
-	
-	SIGNAL clk_hf : std_logic;
+	SIGNAL rxdp : STD_LOGIC;
+	SIGNAL rxdn : STD_LOGIC;
+	SIGNAL txdp : STD_LOGIC;
+	SIGNAL txdn : STD_LOGIC;
+
+	SIGNAL clk_hf : STD_LOGIC;
+	SIGNAL setup_detected : STD_LOGIC;
+	SIGNAL data_detected : STD_LOGIC;
 
 BEGIN
 	led <= NOT rst_n;
@@ -81,35 +123,99 @@ BEGIN
 
 	u_phy : usb_phy
 	PORT MAP(
+		-- phy control
 		clk => clk_hf,
 		rst => '1',
 		phy_tx_mode => '0',
 		usb_rst => utmi_usb_rst,
+
+		-- usb interface
 		rxd => rxd,
 		rxdp => rxdp,
 		rxdn => rxdn,
 		txdp => txdp,
 		txdn => txdn,
 		txoe => txoe,
+
+		--- utmi tx interface
 		DataOut_i => utmi_dout,
 		TxValid_i => utmi_txvalid,
 		TxReady_o => utmi_txrdy,
+
+		--- utmi rx interface
 		DataIn_o => utmi_din,
 		RxValid_o => utmi_rxvalid,
 		RxActive_o => utmi_rxactive,
 		RxError_o => utmi_rxerror,
+
+		--- debug info
 		LineState_o => utmi_line_state
 	);
 
-	usb_dp <= txdp when txoe = '0' else 'Z'; -- ffs. txoe must be low to transmit
-	usb_dn <= txdn when txoe = '0' else 'Z';
+	setup_detector : pid_detector
+	PORT MAP(
+		utmi_din => utmi_din,
+		utmi_rxvalid => utmi_rxvalid,
+		utmi_rxactive => utmi_rxactive,
+		utmi_rxerror => utmi_rxerror,
 
-	rxdp <= usb_dp;
-	rxdn <= usb_dn;
+		pid_filter_i => x"2D",
+		pid_detected_o => setup_detected
+	);
+
+	data_detector : pid_detector
+	PORT MAP(
+		utmi_din => utmi_din,
+		utmi_rxvalid => utmi_rxvalid,
+		utmi_rxactive => utmi_rxactive,
+		utmi_rxerror => utmi_rxerror,
+
+		pid_filter_i => x"C3",
+		pid_detected_o => data_detected
+	);
+
+	ack_sender_inst : ack_sender
+	PORT MAP(
+		clk => clk_hf,
+		utmi_dout_o => utmi_dout,
+		utmi_txvalid_o => utmi_txvalid,
+		send_trigger_i => data_detected,
+		utmi_txrdy_i => utmi_txrdy
+	);
+
+	-- D+ buffer
+	u_dp_io : SB_IO
+	GENERIC MAP(
+		PIN_TYPE => 41,
+		PULLUP => 0
+	)
+	PORT MAP(
+		PACKAGE_PIN => usb_dp,
+		D_OUT_0 => txdp,
+		OUTPUT_ENABLE => not txoe,
+		D_IN_0 => rxdp
+	);
+
+	-- D- buffer
+	u_dn_io : SB_IO
+	GENERIC MAP(
+		PIN_TYPE => 41,
+		PULLUP => 0
+	)
+	PORT MAP(
+		PACKAGE_PIN => usb_dn,
+		D_OUT_0 => txdn,
+		OUTPUT_ENABLE => not txoe,
+		D_IN_0 => rxdn
+	);
 
 	usb_pu <= '1'; -- note: icesugar has the pull routed to a pin... annoyingly
 
 	rx_valid <= utmi_rxvalid;
-	dbg_io <= utmi_rxvalid;
+	dbg_io1 <= utmi_rxactive;
+	dbg_io2 <= txoe;
+
+	usb_feedthrough_dp_o <= utmi_line_state(0); -- for test jig
+	usb_feedthrough_dn_o <= utmi_line_state(1); -- for test jig
 
 END ARCHITECTURE;
