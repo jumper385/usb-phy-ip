@@ -90,4 +90,6 @@ begin
 	rxdp <= usb_dp_io;
 	rxdn <= usb_dn_io;
 
+	fs_pu_o <= '1'; -- dont route if not required; put into signal or smthn
+
 end architecture
