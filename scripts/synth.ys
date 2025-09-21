@@ -2,8 +2,6 @@ plugin -i /usr/local/share/yosys/plugins/ghdl.so
 
 #  Import VHDL design (no JSON yet)
 read_verilog \
- 	verilog/and2.v \
- 	verilog/or2.v \
  	verilog/timescale.v \
  	verilog/usb_phy.v \
  	verilog/usb_rx_phy.v \
