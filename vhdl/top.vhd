@@ -21,19 +21,6 @@ END ENTITY;
 
 ARCHITECTURE rtl OF top IS
 
-	COMPONENT SB_IO
-		GENERIC (
-			PIN_TYPE : INTEGER := 41; -- 0b101001: simple bidir, D_OUT_0 + D_IN_0 + OE
-			PULLUP : INTEGER := 0
-		);
-		PORT (
-			PACKAGE_PIN : INOUT STD_LOGIC;
-			D_OUT_0 : IN STD_LOGIC;
-			OUTPUT_ENABLE : IN STD_LOGIC;
-			D_IN_0 : OUT STD_LOGIC
-		);
-	END COMPONENT;
-
 	COMPONENT SB_HFOSC
 		GENERIC (CLKHF_DIV : STRING := "0b00");
 		PORT (
@@ -90,6 +77,11 @@ ARCHITECTURE rtl OF top IS
 			dbg_state_o : out std_logic_vector(2 downto 0)
 		);
 	END COMPONENT;
+	
+	-- constants
+	CONSTANT PID_SETUP : std_logic_vector(7 downto 0) := x"2D";
+	CONSTANT PID_DATA0 : std_logic_vector(7 downto 0) := x"C3";
+	CONSTANT PID_IN : std_logic_vector(7 downto 0) := x"69";
 
 	-- signals ...
 	SIGNAL txoe : STD_LOGIC;
@@ -162,65 +154,15 @@ BEGIN
 		LineState_o => utmi_line_state
 	);
 
+	setup_detected <= '1' when utmi_din(7 downto 0) = PID_SETUP else '0';
+	data_detected <= '1' when utmi_din(7 downto 0) = PID_DATA0 else '0';
+	in_detected  <= '1' when utmi_din(7 downto 0) = PID_IN else '0';
 
-	setup_detector : pid_detector
-	PORT MAP(
-		utmi_din => utmi_din,
-		utmi_rxvalid => utmi_rxvalid,
-		utmi_rxactive => utmi_rxactive,
-		utmi_rxerror => utmi_rxerror,
+	usb_dp <= txdp when txoe = '0' else 'Z';
+	usb_dn <= txdn when txoe = '0' else 'Z';
 
-		pid_filter_i => x"2D",
-		pid_detected_o => setup_detected
-	);
-
-	data_detector : pid_detector
-	PORT MAP(
-		utmi_din => utmi_din,
-		utmi_rxvalid => utmi_rxvalid,
-		utmi_rxactive => utmi_rxactive,
-		utmi_rxerror => utmi_rxerror,
-
-		pid_filter_i => x"C3",
-		pid_detected_o => data_detected
-	);
-
-	in_detector : pid_detector
-	PORT MAP(
-		utmi_din => utmi_din,
-		utmi_rxvalid => utmi_rxvalid,
-		utmi_rxactive => utmi_rxactive,
-		utmi_rxerror => utmi_rxerror,
-
-		pid_filter_i => x"69",
-		pid_detected_o => in_detected
-	);
-
-	-- D+ buffer
-	u_dp_io : SB_IO
-	GENERIC MAP(
-		PIN_TYPE => 41,
-		PULLUP => 0
-	)
-	PORT MAP(
-		PACKAGE_PIN => usb_dp,
-		D_OUT_0 => txdp,
-		OUTPUT_ENABLE => not txoe,
-		D_IN_0 => rxdp
-	);
-
-	-- D- buffer
-	u_dn_io : SB_IO
-	GENERIC MAP(
-		PIN_TYPE => 41,
-		PULLUP => 0
-	)
-	PORT MAP(
-		PACKAGE_PIN => usb_dn,
-		D_OUT_0 => txdn,
-		OUTPUT_ENABLE => not txoe,
-		D_IN_0 => rxdn
-	);
+	rxdp <= usb_dp;
+	rxdn <= usb_dn;
 
 	handshake_trig <= setup_detected or data_detected;
 
