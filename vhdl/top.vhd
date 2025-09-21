@@ -49,18 +49,6 @@ ARCHITECTURE rtl OF top IS
 		);
 	END COMPONENT;
 
-	COMPONENT pid_detector
-		PORT (
-			utmi_din : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
-			utmi_rxvalid : IN STD_LOGIC;
-			utmi_rxactive : IN STD_LOGIC;
-			utmi_rxerror : IN STD_LOGIC;
-
-			pid_filter_i : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
-			pid_detected_o : OUT STD_LOGIC
-		);
-	END COMPONENT;
-
 	COMPONENT handshake_sender
 		PORT (
 			en : in std_logic;
