@@ -59,53 +59,53 @@ use ieee.std_logic_unsigned.all;
 
 entity usb_tx_phy is
 	port (
-		clk              : in  STD_LOGIC;
-		rst              : in  STD_LOGIC;
-		fs_ce            : in  STD_LOGIC;
-		phy_mode         : in  STD_LOGIC; -- HIGH level for differential IO mode (else single-ended)
+		clk : in STD_LOGIC;
+		rst : in STD_LOGIC;
+		fs_ce : in STD_LOGIC;
+		phy_mode : in STD_LOGIC; -- HIGH level for differential IO mode (else single-ended)
 		-- Transciever Interface
 		txdp, txdn, txoe : out STD_LOGIC;
 		-- UTMI Interface
-		DataOut_i        : in  STD_LOGIC_VECTOR(7 downto 0);
-		TxValid_i        : in  STD_LOGIC;
-		TxReady_o        : out STD_LOGIC
+		DataOut_i : in STD_LOGIC_VECTOR(7 downto 0);
+		TxValid_i : in STD_LOGIC;
+		TxReady_o : out STD_LOGIC
 	);
 end entity usb_tx_phy;
 
 architecture RTL of usb_tx_phy is
 
-	signal hold_reg         : STD_LOGIC_VECTOR(7 downto 0);
-	signal ld_data          : STD_LOGIC;
-	signal ld_data_d        : STD_LOGIC;
-	signal ld_sop_d         : STD_LOGIC;
-	signal bit_cnt          : STD_LOGIC_VECTOR(2 downto 0);
-	signal sft_done_e       : STD_LOGIC;
-	signal any_eop_state    : STD_LOGIC;
-	signal append_eop       : STD_LOGIC;
-	signal data_xmit        : STD_LOGIC;
-	signal hold_reg_d       : STD_LOGIC_VECTOR(7 downto 0);
-	signal one_cnt          : STD_LOGIC_VECTOR(2 downto 0);
-	signal sd_bs_o          : STD_LOGIC;
-	signal sd_nrzi_o        : STD_LOGIC;
-	signal sd_raw_o         : STD_LOGIC;
-	signal sft_done         : STD_LOGIC;
-	signal sft_done_r       : STD_LOGIC;
-	signal state            : STD_LOGIC_VECTOR(3 downto 0);
-	signal stuff            : STD_LOGIC;
-	signal tx_ip            : STD_LOGIC;
-	signal tx_ip_sync       : STD_LOGIC;
+	signal hold_reg : STD_LOGIC_VECTOR(7 downto 0);
+	signal ld_data : STD_LOGIC;
+	signal ld_data_d : STD_LOGIC;
+	signal ld_sop_d : STD_LOGIC;
+	signal bit_cnt : STD_LOGIC_VECTOR(2 downto 0);
+	signal sft_done_e : STD_LOGIC;
+	signal any_eop_state : STD_LOGIC;
+	signal append_eop : STD_LOGIC;
+	signal data_xmit : STD_LOGIC;
+	signal hold_reg_d : STD_LOGIC_VECTOR(7 downto 0);
+	signal one_cnt : STD_LOGIC_VECTOR(2 downto 0);
+	signal sd_bs_o : STD_LOGIC;
+	signal sd_nrzi_o : STD_LOGIC;
+	signal sd_raw_o : STD_LOGIC;
+	signal sft_done : STD_LOGIC;
+	signal sft_done_r : STD_LOGIC;
+	signal state : STD_LOGIC_VECTOR(3 downto 0);
+	signal stuff : STD_LOGIC;
+	signal tx_ip : STD_LOGIC;
+	signal tx_ip_sync : STD_LOGIC;
 	signal txoe_r1, txoe_r2 : STD_LOGIC;
 
-	constant IDLE_STATE     : STD_LOGIC_VECTOR(3 downto 0) := "0000";
-	constant SOP_STATE      : STD_LOGIC_VECTOR(3 downto 0) := "0001";
-	constant DATA_STATE     : STD_LOGIC_VECTOR(3 downto 0) := "0010";
-	constant WAIT_STATE     : STD_LOGIC_VECTOR(3 downto 0) := "0011";
-	constant EOP0_STATE     : STD_LOGIC_VECTOR(3 downto 0) := "1000";
-	constant EOP1_STATE     : STD_LOGIC_VECTOR(3 downto 0) := "1001";
-	constant EOP2_STATE     : STD_LOGIC_VECTOR(3 downto 0) := "1010";
-	constant EOP3_STATE     : STD_LOGIC_VECTOR(3 downto 0) := "1011";
-	constant EOP4_STATE     : STD_LOGIC_VECTOR(3 downto 0) := "1100";
-	constant EOP5_STATE     : STD_LOGIC_VECTOR(3 downto 0) := "1101";
+	constant IDLE_STATE : STD_LOGIC_VECTOR(3 downto 0) := "0000";
+	constant SOP_STATE : STD_LOGIC_VECTOR(3 downto 0) := "0001";
+	constant DATA_STATE : STD_LOGIC_VECTOR(3 downto 0) := "0010";
+	constant WAIT_STATE : STD_LOGIC_VECTOR(3 downto 0) := "0011";
+	constant EOP0_STATE : STD_LOGIC_VECTOR(3 downto 0) := "1000";
+	constant EOP1_STATE : STD_LOGIC_VECTOR(3 downto 0) := "1001";
+	constant EOP2_STATE : STD_LOGIC_VECTOR(3 downto 0) := "1010";
+	constant EOP3_STATE : STD_LOGIC_VECTOR(3 downto 0) := "1011";
+	constant EOP4_STATE : STD_LOGIC_VECTOR(3 downto 0) := "1100";
+	constant EOP5_STATE : STD_LOGIC_VECTOR(3 downto 0) := "1101";
 
 begin
 
@@ -116,16 +116,16 @@ begin
 	p_TxReady_o: process (clk, rst) is
 	begin
 		if rst = '0' then
-			TxReady_o   <= '0';
+			TxReady_o <= '0';
 		elsif rising_edge(clk) then
-			TxReady_o   <= ld_data_d and TxValid_i;
+			TxReady_o <= ld_data_d and TxValid_i;
 		end if;
 	end process p_TxReady_o;
 
 	p_ld_data: process (clk) is
 	begin
 		if rising_edge(clk) then
-			ld_data     <= ld_data_d;
+			ld_data <= ld_data_d;
 		end if;
 	end process p_ld_data;
 
@@ -136,12 +136,12 @@ begin
 	p_tx_ip: process (clk, rst) is
 	begin
 		if rst = '0' then
-			tx_ip       <= '0';
+			tx_ip <= '0';
 		elsif rising_edge(clk) then
 			if ld_sop_d = '1' then
-				tx_ip      <= '1';
+				tx_ip <= '1';
 			elsif append_eop = '1' then
-				tx_ip      <= '0';
+				tx_ip <= '0';
 			end if;
 		end if;
 	end process p_tx_ip;
@@ -149,7 +149,7 @@ begin
 	p_tx_ip_sync: process (clk, rst) is
 	begin
 		if rst = '0' then
-			tx_ip_sync  <= '0';
+			tx_ip_sync <= '0';
 		elsif rising_edge(clk) then
 			if fs_ce = '1' then
 				tx_ip_sync <= tx_ip;
@@ -164,12 +164,12 @@ begin
 	p_data_xmit: process (clk, rst) is
 	begin
 		if rst = '0' then
-			data_xmit   <= '0';
+			data_xmit <= '0';
 		elsif rising_edge(clk) then
 			if TxValid_i = '1' and tx_ip = '0' then
-				data_xmit  <= '1';
+				data_xmit <= '1';
 			elsif TxValid_i = '0' then
-				data_xmit  <= '0';
+				data_xmit <= '0';
 			end if;
 		end if;
 	end process p_data_xmit;
@@ -181,12 +181,12 @@ begin
 	p_bit_cnt: process (clk, rst) is
 	begin
 		if rst = '0' then
-			bit_cnt     <= "000";
+			bit_cnt <= "000";
 		elsif rising_edge(clk) then
 			if tx_ip_sync = '0' then
-				bit_cnt    <= "000";
+				bit_cnt <= "000";
 			elsif fs_ce = '1' and stuff = '0' then
-				bit_cnt    <= bit_cnt + 1;
+				bit_cnt <= bit_cnt + 1;
 			end if;
 		end if;
 	end process p_bit_cnt;
@@ -195,9 +195,9 @@ begin
 	begin
 		if rising_edge(clk) then
 			if tx_ip_sync = '0' then
-				sd_raw_o   <= '0';
+				sd_raw_o <= '0';
 			else
-				sd_raw_o   <= hold_reg_d(CONV_INTEGER(UNSIGNED(bit_cnt)));
+				sd_raw_o <= hold_reg_d(CONV_INTEGER(UNSIGNED(bit_cnt)));
 			end if;
 		end if;
 	end process p_sd_raw_o;
@@ -205,33 +205,33 @@ begin
 	p_sft_done: process (clk, rst) is
 	begin
 		if rst = '0' then
-			sft_done    <= '0';
-			sft_done_r  <= '0';
+			sft_done <= '0';
+			sft_done_r <= '0';
 		elsif rising_edge(clk) then
 			if bit_cnt = "111" then
-				sft_done   <= not stuff;
+				sft_done <= not stuff;
 			else
-				sft_done   <= '0';
+				sft_done <= '0';
 			end if;
-			sft_done_r  <= sft_done;
+			sft_done_r <= sft_done;
 		end if;
 	end process p_sft_done;
 
-	sft_done_e    <= sft_done and not sft_done_r;
+	sft_done_e <= sft_done and not sft_done_r;
 
 	-- Out Data Hold Register
 	p_hold_reg: process (clk, rst) is
 	begin
 		if rst = '0' then
-			hold_reg    <= X"00";
-			hold_reg_d  <= X"00";
+			hold_reg <= X"00";
+			hold_reg_d <= X"00";
 		elsif rising_edge(clk) then
 			if ld_sop_d = '1' then
-				hold_reg   <= X"80";
+				hold_reg <= X"80";
 			elsif ld_data = '1' then
-				hold_reg   <= DataOut_i;
+				hold_reg <= DataOut_i;
 			end if;
-			hold_reg_d  <= hold_reg;
+			hold_reg_d <= hold_reg;
 		end if;
 	end process p_hold_reg;
 
@@ -242,15 +242,15 @@ begin
 	p_one_cnt: process (clk, rst) is
 	begin
 		if rst = '0' then
-			one_cnt     <= "000";
+			one_cnt <= "000";
 		elsif rising_edge(clk) then
 			if tx_ip_sync = '0' then
-				one_cnt    <= "000";
+				one_cnt <= "000";
 			elsif fs_ce = '1' then
 				if sd_raw_o = '0' or stuff = '1' then
-					one_cnt   <= "000";
+					one_cnt <= "000";
 				else
-					one_cnt   <= one_cnt + 1;
+					one_cnt <= one_cnt + 1;
 				end if;
 			end if;
 		end if;
@@ -261,16 +261,16 @@ begin
 	p_sd_bs_o: process (clk, rst) is
 	begin
 		if rst = '0' then
-			sd_bs_o     <= '0';
+			sd_bs_o <= '0';
 		elsif rising_edge(clk) then
 			if fs_ce = '1' then
 				if tx_ip_sync = '0' then
-					sd_bs_o   <= '0';
+					sd_bs_o <= '0';
 				else
 					if stuff = '1' then
-						sd_bs_o  <= '0';
+						sd_bs_o <= '0';
 					else
-						sd_bs_o  <= sd_raw_o;
+						sd_bs_o <= sd_raw_o;
 					end if;
 				end if;
 			end if;
@@ -284,10 +284,10 @@ begin
 	p_sd_nrzi_o: process (clk, rst) is
 	begin
 		if rst = '0' then
-			sd_nrzi_o   <= '1';
+			sd_nrzi_o <= '1';
 		elsif rising_edge(clk) then
 			if tx_ip_sync = '0' or txoe_r1 = '0' then
-				sd_nrzi_o  <= '1';
+				sd_nrzi_o <= '1';
 			elsif fs_ce = '1' then
 				if sd_bs_o = '1' then
 					sd_nrzi_o <= sd_nrzi_o;
@@ -305,14 +305,14 @@ begin
 	p_txoe: process (clk, rst) is
 	begin
 		if rst = '0' then
-			txoe_r1     <= '0';
-			txoe_r2     <= '0';
-			txoe        <= '1';
+			txoe_r1 <= '0';
+			txoe_r2 <= '0';
+			txoe <= '1';
 		elsif rising_edge(clk) then
 			if fs_ce = '1' then
-				txoe_r1    <= tx_ip_sync;
-				txoe_r2    <= txoe_r1;
-				txoe       <= not (txoe_r1 or txoe_r2);
+				txoe_r1 <= tx_ip_sync;
+				txoe_r2 <= txoe_r1;
+				txoe <= not (txoe_r1 or txoe_r2);
 			end if;
 		end if;
 	end process p_txoe;
@@ -324,16 +324,16 @@ begin
 	p_txdpn: process (clk, rst) is
 	begin
 		if rst = '0' then
-			txdp        <= '1';
-			txdn        <= '0';
+			txdp <= '1';
+			txdn <= '0';
 		elsif rising_edge(clk) then
 			if fs_ce = '1' then
 				if phy_mode = '1' then
-					txdp      <= not append_eop and sd_nrzi_o;
-					txdn      <= not append_eop and not sd_nrzi_o;
+					txdp <= not append_eop and sd_nrzi_o;
+					txdn <= not append_eop and not sd_nrzi_o;
 				else
-					txdp      <= sd_nrzi_o;
-					txdn      <= append_eop;
+					txdp <= sd_nrzi_o;
+					txdn <= append_eop;
 				end if;
 			end if;
 		end if;
@@ -348,39 +348,39 @@ begin
 	p_state: process (clk, rst) is
 	begin
 		if rst = '0' then
-			state       <= IDLE_STATE;
+			state <= IDLE_STATE;
 		elsif rising_edge(clk) then
 			if any_eop_state = '0' then
 				case (state) is
 					when IDLE_STATE =>
 						if TxValid_i = '1' then
-							state   <= SOP_STATE;
+							state <= SOP_STATE;
 						end if;
 					when SOP_STATE =>
 						if sft_done_e = '1' then
-							state   <= DATA_STATE;
+							state <= DATA_STATE;
 						end if;
 					when DATA_STATE =>
 						if data_xmit = '0' and sft_done_e = '1' then
 							if one_cnt = "101" and hold_reg_d(7) = '1' then
-								state  <= EOP0_STATE;
+								state <= EOP0_STATE;
 							else
-								state  <= EOP1_STATE;
+								state <= EOP1_STATE;
 							end if;
 						end if;
 					when WAIT_STATE =>
 						if fs_ce = '1' then
-							state   <= IDLE_STATE;
+							state <= IDLE_STATE;
 						end if;
 					when others =>
-						state    <= IDLE_STATE;
+						state <= IDLE_STATE;
 				end case;
 			else
 				if fs_ce = '1' then
 					if state = EOP5_state then
-						state    <= WAIT_STATE;
+						state <= WAIT_STATE;
 					else
-						state    <= unsigned(state) + 1;
+						state <= unsigned(state) + 1;
 					end if;
 				end if;
 			end if;
@@ -389,7 +389,7 @@ begin
 
 	append_eop <= '1' when state(3 downto 2) = "11" else '0'; -- EOP4_STATE OR EOP5_STATE
 	ld_sop_d <= TxValid_i when state = IDLE_STATE else '0';
-	ld_data_d     <=
+	ld_data_d <=
 		sft_done_e when state = SOP_STATE or (state = DATA_STATE and data_xmit = '1')
 		else '0';
 
