@@ -30,24 +30,32 @@ ARCHITECTURE rtl OF top IS
 		);
 	END COMPONENT;
 
-	COMPONENT usb_phy
-		PORT (
-			clk : IN STD_LOGIC;
-			rst : IN STD_LOGIC;
-			phy_tx_mode : IN STD_LOGIC;
-			usb_rst : OUT STD_LOGIC;
-			rxd, rxdp, rxdn : IN STD_LOGIC;
-			txdp, txdn, txoe : OUT STD_LOGIC;
-			DataOut_i : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
-			TxValid_i : IN STD_LOGIC;
-			TxReady_o : OUT STD_LOGIC;
-			DataIn_o : OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
-			RxValid_o : OUT STD_LOGIC;
-			RxActive_o : OUT STD_LOGIC;
-			RxError_o : OUT STD_LOGIC;
-			LineState_o : OUT STD_LOGIC_VECTOR(1 DOWNTO 0)
+	component honeycomb_fs_phy
+		port (
+			rst_i : in std_logic; -- high = reset; low = normal
+			clk_48mhz_i : in std_logic; 
+			fs_pu_o : out std_logic; -- output to pull up resistor; optional
+
+			-- usb interface
+			usb_dp_io : inout std_logic; -- ensure 1.5k pull up here 
+			usb_dn_io : inout std_logic;
+			
+			-- utmi tx interface
+			utmi_dout_i : in std_logic_vector(7 downto 0); -- stage tx data here
+			utmi_txvalid_i : in std_logic; -- request to tx here; set high
+			utmi_txrdy_o : out std_logic; -- high = transmitting state
+
+			-- utmi rx interface
+			utmi_din_o : out std_logic_vector(7 downto 0); -- all rx line data here
+			utmi_rxvalid_o : out std_logic; -- high rx is good to read
+			utmi_rxactive_o : out std_logic; -- high if rx'ing
+			utmi_rxerror_o : out std_logic; -- high if error
+
+			-- utmi debug interface
+			utmi_line_state_o : out std_logic_vector(1 downto 0); -- probe bit 0 for usb state
+			utmi_usb_rst_o : out std_logic -- high if usb phy is being reset
 		);
-	END COMPONENT;
+	end component;
 
 	COMPONENT handshake_sender
 		PORT (
@@ -94,7 +102,6 @@ ARCHITECTURE rtl OF top IS
 	SIGNAL setup_detected : STD_LOGIC;
 	SIGNAL data_detected : STD_LOGIC;
 	SIGNAL in_detected : std_logic;
-	SIGNAL handshake_trig : STD_LOGIC;
 
 	SIGNAL dbg_state : std_logic_vector(2 downto 0);
 
@@ -110,53 +117,32 @@ BEGIN
 		CLKHFPU => '1',
 		CLKHF => clk_hf
 	);
+	
+	usb_phy : honeycomb_fs_phy
+	port map (
+		rst_i => '1',
+		clk_48mhz_i => clk_hf,
+		fs_pu_o => usb_pu,
 
-	u_phy : usb_phy
-	PORT MAP(
-		-- phy control
-		clk => clk_hf,
-		rst => '1',
-		phy_tx_mode => '1',
-		usb_rst => utmi_usb_rst,
+		usb_dp_io => usb_dp,
+		usb_dn_io => usb_dn,
 
-		-- usb interface
-		rxd => rxd,
-		rxdp => rxdp,
-		rxdn => rxdn,
-		txdp => txdp,
-		txdn => txdn,
-		txoe => txoe,
+		utmi_dout_i => utmi_dout,
+		utmi_txvalid_i => utmi_txvalid,
+		utmi_txrdy_o => utmi_txrdy,
 
-		--- utmi tx interface
-		DataOut_i => utmi_dout,
-		TxValid_i => utmi_txvalid,
-		TxReady_o => utmi_txrdy,
+		utmi_din_o => utmi_din,
+		utmi_rxvalid_o => utmi_rxvalid,
+		utmi_rxactive_o => utmi_rxactive,
+		utmi_rxerror_o => utmi_rxerror,
 
-		--- utmi rx interface
-		DataIn_o => utmi_din,
-		RxValid_o => utmi_rxvalid,
-		RxActive_o => utmi_rxactive,
-		RxError_o => utmi_rxerror,
-
-		--- debug info
-		LineState_o => utmi_line_state
+		utmi_line_state_o => utmi_line_state,
+		utmi_usb_rst_o => utmi_usb_rst
 	);
-
-	setup_detected <= '1' when utmi_din(7 downto 0) = PID_SETUP else '0';
-	data_detected <= '1' when utmi_din(7 downto 0) = PID_DATA0 else '0';
-	in_detected  <= '1' when utmi_din(7 downto 0) = PID_IN else '0';
-
-	usb_dp <= txdp when txoe = '0' else 'Z';
-	usb_dn <= txdn when txoe = '0' else 'Z';
-
-	rxdp <= usb_dp;
-	rxdn <= usb_dn;
-
-	handshake_trig <= setup_detected or data_detected;
 
 	hs_sender_inst : handshake_sender
 	PORT MAP(
-		en => rst_n,
+		en => not rst_n,
 		clk => clk_hf,
 
 		utmi_dout_o => utmi_dout,
@@ -169,9 +155,6 @@ BEGIN
 		
 		dbg_state_o => dbg_state
 	);
-
-
-	usb_pu <= '1'; -- note: icesugar has the pull routed to a pin... annoyingly
 
 	rx_valid <= utmi_rxvalid;
 	dbg_io1 <= in_detected;

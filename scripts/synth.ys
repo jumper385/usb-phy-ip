@@ -9,6 +9,7 @@ read_verilog \
 
 ghdl --std=08 -fsynopsys -frelaxed-rules \
 	vhdl/top.vhd \
+	vhdl/honeycomb_phy.vhdl \
 	vhdl/handshake_sender.vhd \
 	-e top;
 

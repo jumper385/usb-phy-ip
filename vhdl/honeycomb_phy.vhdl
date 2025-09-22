@@ -1,10 +1,10 @@
 library ieee;
-use iee.std_logic_1164.ALL;
+use ieee.std_logic_1164.ALL;
 use ieee.numeric_std.all;
 
 entity honeycomb_fs_phy is
 	port (
-		rst_i : in std_logic; -- high = reset; low = normal
+		rst_i : in std_logic; -- low = reset; high = normal
 		clk_48mhz_i : in std_logic; 
 		fs_pu_o : out std_logic; -- output to pull up resistor; optional
 
@@ -15,7 +15,7 @@ entity honeycomb_fs_phy is
 		-- utmi tx interface
 		utmi_dout_i : in std_logic_vector(7 downto 0); -- stage tx data here
 		utmi_txvalid_i : in std_logic; -- request to tx here; set high
-		utmi_txrdy_o : in std_logic; -- high = transmitting state
+		utmi_txrdy_o : out std_logic; -- high = transmitting state
 		
 		-- utmi rx interface
 		utmi_din_o : out std_logic_vector(7 downto 0); -- all rx line data here
@@ -24,8 +24,8 @@ entity honeycomb_fs_phy is
 		utmi_rxerror_o : out std_logic; -- high if error
 
 		-- utmi debug interface
-		utmi_line_state_o : std_logic_vector(1 downto 0); -- probe bit 0 for usb state
-		utmi_usb_rst_o : in std_logic; -- high if usb phy is being reset
+		utmi_line_state_o : out std_logic_vector(1 downto 0); -- probe bit 0 for usb state
+		utmi_usb_rst_o : out std_logic -- high if usb phy is being reset
 	);
 end honeycomb_fs_phy;
 
@@ -58,9 +58,9 @@ begin
 	port map (
 		clk => clk_48mhz_i,
 		rst => rst_i,
-		phy_tx_mode = '1', -- u can use in single ended mode but we wont...
+		phy_tx_mode => '1', -- u can use in single ended mode but we wont...
 		
-		rxd => rxd, -- used to retreive timing for the usb phy; rxdp will do
+		rxd => rxdp, -- used to retreive timing for the usb phy; rxdp will do
 		rxdp => rxdp,
 		rxdn => rxdn,
 		txoe => txoe, -- used as tristate ctrl for usb phy inout pins
@@ -69,10 +69,10 @@ begin
 			
 		DataOut_i => utmi_dout_i, 
 		TxValid_i => utmi_txvalid_i, 	
-		TxRead_o => utmi_txrdy_o, 
+		TxReady_o => utmi_txrdy_o, 
 		
 		DataIn_o => utmi_din_o, 
-		RxValid => utmi_rxvalid_o,
+		RxValid_o => utmi_rxvalid_o,
 		RxActive_o => utmi_rxactive_o,
 		RxError_o => utmi_rxerror_o,
 
@@ -84,12 +84,12 @@ begin
 	-- testing shows this works though; a bit more agnostic
 	-- this doesnt actually compile in any SB_IO... so assume 
 	-- there is no buffering
-	usb_dp_io <= rxdp when txoe = '0' else "Z";
-	usb_dn_io <= rxdn when txoe = '0' else "Z";
+	usb_dp_io <= txdp when txoe = '0' else 'Z';
+	usb_dn_io <= txdn when txoe = '0' else 'Z';
 
 	rxdp <= usb_dp_io;
 	rxdn <= usb_dn_io;
 
 	fs_pu_o <= '1'; -- dont route if not required; put into signal or smthn
 
-end architecture
+end architecture;
