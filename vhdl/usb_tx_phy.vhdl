@@ -1,4 +1,3 @@
-
 --======================================================================================--
 --          Verilog to VHDL conversion by Martin Neumann martin@neumnns-mail.de         --
 --                                                                                      --
@@ -53,339 +52,345 @@
 -- |  1.0  |04 Feb 2011|  MN   | Initial version                                      | --
 --======================================================================================--
 
-LIBRARY ieee;
-USE ieee.std_logic_1164.all;
-USE ieee.std_logic_arith.all;
-USE ieee.std_logic_unsigned.all;
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.std_logic_arith.all;
+use ieee.std_logic_unsigned.all;
 
-ENTITY usb_tx_phy is
-  PORT (
-    clk              : IN  STD_LOGIC;
-    rst              : IN  STD_LOGIC;
-    fs_ce            : IN  STD_LOGIC;
-    phy_mode         : IN  STD_LOGIC; -- HIGH level for differential IO mode (else single-ended)
-    -- Transciever Interface
-    txdp, txdn, txoe : OUT STD_LOGIC;
-    -- UTMI Interface
-    DataOut_i        : IN  STD_LOGIC_VECTOR(7 DOWNTO 0);
-    TxValid_i        : IN  STD_LOGIC;
-    TxReady_o        : OUT STD_LOGIC
-  );
-END usb_tx_phy;
+entity usb_tx_phy is
+	port (
+		clk              : in  STD_LOGIC;
+		rst              : in  STD_LOGIC;
+		fs_ce            : in  STD_LOGIC;
+		phy_mode         : in  STD_LOGIC; -- HIGH level for differential IO mode (else single-ended)
+		-- Transciever Interface
+		txdp, txdn, txoe : out STD_LOGIC;
+		-- UTMI Interface
+		DataOut_i        : in  STD_LOGIC_VECTOR(7 downto 0);
+		TxValid_i        : in  STD_LOGIC;
+		TxReady_o        : out STD_LOGIC
+	);
+end entity usb_tx_phy;
 
-ARCHITECTURE RTL of usb_tx_phy is
+architecture RTL of usb_tx_phy is
 
-  SIGNAL hold_reg           : STD_LOGIC_VECTOR(7 DOWNTO 0);
-  SIGNAL ld_data            : STD_LOGIC;
-  SIGNAL ld_data_d          : STD_LOGIC;
-  SIGNAL ld_sop_d           : STD_LOGIC;
-  SIGNAL bit_cnt            : STD_LOGIC_VECTOR(2 DOWNTO 0);
-  SIGNAL sft_done_e         : STD_LOGIC;
-  SIGNAL any_eop_state      : STD_LOGIC;
-  SIGNAL append_eop         : STD_LOGIC;
-  SIGNAL data_xmit          : STD_LOGIC;
-  SIGNAL hold_reg_d         : STD_LOGIC_VECTOR(7 DOWNTO 0);
-  SIGNAL one_cnt            : STD_LOGIC_VECTOR(2 DOWNTO 0);
-  SIGNAL sd_bs_o            : STD_LOGIC;
-  SIGNAL sd_nrzi_o          : STD_LOGIC;
-  SIGNAL sd_raw_o           : STD_LOGIC;
-  SIGNAL sft_done           : STD_LOGIC;
-  SIGNAL sft_done_r         : STD_LOGIC;
-  SIGNAL state              : STD_LOGIC_VECTOR(3 DOWNTO 0);
-  SIGNAL stuff              : STD_LOGIC;
-  SIGNAL tx_ip              : STD_LOGIC;
-  SIGNAL tx_ip_sync         : STD_LOGIC;
-  SIGNAL txoe_r1, txoe_r2   : STD_LOGIC;
+	signal hold_reg         : STD_LOGIC_VECTOR(7 downto 0);
+	signal ld_data          : STD_LOGIC;
+	signal ld_data_d        : STD_LOGIC;
+	signal ld_sop_d         : STD_LOGIC;
+	signal bit_cnt          : STD_LOGIC_VECTOR(2 downto 0);
+	signal sft_done_e       : STD_LOGIC;
+	signal any_eop_state    : STD_LOGIC;
+	signal append_eop       : STD_LOGIC;
+	signal data_xmit        : STD_LOGIC;
+	signal hold_reg_d       : STD_LOGIC_VECTOR(7 downto 0);
+	signal one_cnt          : STD_LOGIC_VECTOR(2 downto 0);
+	signal sd_bs_o          : STD_LOGIC;
+	signal sd_nrzi_o        : STD_LOGIC;
+	signal sd_raw_o         : STD_LOGIC;
+	signal sft_done         : STD_LOGIC;
+	signal sft_done_r       : STD_LOGIC;
+	signal state            : STD_LOGIC_VECTOR(3 downto 0);
+	signal stuff            : STD_LOGIC;
+	signal tx_ip            : STD_LOGIC;
+	signal tx_ip_sync       : STD_LOGIC;
+	signal txoe_r1, txoe_r2 : STD_LOGIC;
 
-  CONSTANT IDLE_STATE       : STD_LOGIC_VECTOR(3 DOWNTO 0) := "0000";
-  CONSTANT SOP_STATE        : STD_LOGIC_VECTOR(3 DOWNTO 0) := "0001";
-  CONSTANT DATA_STATE       : STD_LOGIC_VECTOR(3 DOWNTO 0) := "0010";
-  CONSTANT WAIT_STATE       : STD_LOGIC_VECTOR(3 DOWNTO 0) := "0011";
-  CONSTANT EOP0_STATE       : STD_LOGIC_VECTOR(3 DOWNTO 0) := "1000";
-  CONSTANT EOP1_STATE       : STD_LOGIC_VECTOR(3 DOWNTO 0) := "1001";
-  CONSTANT EOP2_STATE       : STD_LOGIC_VECTOR(3 DOWNTO 0) := "1010";
-  CONSTANT EOP3_STATE       : STD_LOGIC_VECTOR(3 DOWNTO 0) := "1011";
-  CONSTANT EOP4_STATE       : STD_LOGIC_VECTOR(3 DOWNTO 0) := "1100";
-  CONSTANT EOP5_STATE       : STD_LOGIC_VECTOR(3 DOWNTO 0) := "1101";
+	constant IDLE_STATE     : STD_LOGIC_VECTOR(3 downto 0) := "0000";
+	constant SOP_STATE      : STD_LOGIC_VECTOR(3 downto 0) := "0001";
+	constant DATA_STATE     : STD_LOGIC_VECTOR(3 downto 0) := "0010";
+	constant WAIT_STATE     : STD_LOGIC_VECTOR(3 downto 0) := "0011";
+	constant EOP0_STATE     : STD_LOGIC_VECTOR(3 downto 0) := "1000";
+	constant EOP1_STATE     : STD_LOGIC_VECTOR(3 downto 0) := "1001";
+	constant EOP2_STATE     : STD_LOGIC_VECTOR(3 downto 0) := "1010";
+	constant EOP3_STATE     : STD_LOGIC_VECTOR(3 downto 0) := "1011";
+	constant EOP4_STATE     : STD_LOGIC_VECTOR(3 downto 0) := "1100";
+	constant EOP5_STATE     : STD_LOGIC_VECTOR(3 downto 0) := "1101";
 
-BEGIN
+begin
 
---======================================================================================--
-  -- Misc Logic                                                                         --
---======================================================================================--
+	--======================================================================================--
+	-- Misc Logic                                                                         --
+	--======================================================================================--
 
-  p_TxReady_o: PROCESS (clk, rst)
-  BEGIN
-    IF rst ='0' THEN
-      TxReady_o <= '0';
-    ELSIF rising_edge(clk) THEN
-      TxReady_o <= ld_data_d AND TxValid_i;
-    END IF;
-  END PROCESS;
+	p_TxReady_o: process (clk, rst) is
+	begin
+		if rst = '0' then
+			TxReady_o   <= '0';
+		elsif rising_edge(clk) then
+			TxReady_o   <= ld_data_d and TxValid_i;
+		end if;
+	end process p_TxReady_o;
 
-  p_ld_data: PROCESS (clk)
-  BEGIN
-    IF rising_edge(clk) THEN
-      ld_data <= ld_data_d;
-    END IF;
-  END PROCESS;
+	p_ld_data: process (clk) is
+	begin
+		if rising_edge(clk) then
+			ld_data     <= ld_data_d;
+		end if;
+	end process p_ld_data;
 
---======================================================================================--
-  -- Transmit in progress indicator                                                     --
---======================================================================================--
+	--======================================================================================--
+	-- Transmit in progress indicator                                                     --
+	--======================================================================================--
 
-  p_tx_ip: PROCESS (clk, rst)
-  BEGIN
-    IF rst ='0' THEN
-      tx_ip <= '0';
-    ELSIF rising_edge(clk) THEN
-      IF ld_sop_d  ='1' THEN
-        tx_ip <= '1';
-      ELSIF append_eop ='1' THEN
-        tx_ip <= '0';
-      END IF;
-    END IF;
-  END PROCESS;
+	p_tx_ip: process (clk, rst) is
+	begin
+		if rst = '0' then
+			tx_ip       <= '0';
+		elsif rising_edge(clk) then
+			if ld_sop_d = '1' then
+				tx_ip      <= '1';
+			elsif append_eop = '1' then
+				tx_ip      <= '0';
+			end if;
+		end if;
+	end process p_tx_ip;
 
-  p_tx_ip_sync: PROCESS (clk, rst)
-  BEGIN
-    IF rst ='0' THEN
-      tx_ip_sync <= '0';
-    ELSIF rising_edge(clk) THEN
-      IF fs_ce ='1' THEN
-        tx_ip_sync <= tx_ip;
-      END IF;
-    END IF;
-  END PROCESS;
+	p_tx_ip_sync: process (clk, rst) is
+	begin
+		if rst = '0' then
+			tx_ip_sync  <= '0';
+		elsif rising_edge(clk) then
+			if fs_ce = '1' then
+				tx_ip_sync <= tx_ip;
+			end if;
+		end if;
+	end process p_tx_ip_sync;
 
-  -- data_xmit helps us to catch cases where TxValid drops due to
-  -- packet END and then gets re-asserted as a new packet starts.
-  -- We might not see this because we are still transmitting.
-  -- data_xmit should solve those cases ...
-  p_data_xmit: PROCESS (clk, rst)
-  BEGIN
-    IF rst ='0' THEN
-      data_xmit <= '0';
-    ELSIF rising_edge(clk) THEN
-      IF TxValid_i ='1' AND tx_ip ='0' THEN
-        data_xmit <= '1';
-      ELSIF TxValid_i = '0' THEN
-        data_xmit <= '0';
-      END IF;
-    END IF;
-  END PROCESS;
+	-- data_xmit helps us to catch cases where TxValid drops due to
+	-- packet END and then gets re-asserted as a new packet starts.
+	-- We might not see this because we are still transmitting.
+	-- data_xmit should solve those cases ...
+	p_data_xmit: process (clk, rst) is
+	begin
+		if rst = '0' then
+			data_xmit   <= '0';
+		elsif rising_edge(clk) then
+			if TxValid_i = '1' and tx_ip = '0' then
+				data_xmit  <= '1';
+			elsif TxValid_i = '0' then
+				data_xmit  <= '0';
+			end if;
+		end if;
+	end process p_data_xmit;
 
---======================================================================================--
-  -- Shift Register                                                                     --
---======================================================================================--
+	--======================================================================================--
+	-- Shift Register                                                                     --
+	--======================================================================================--
 
-  p_bit_cnt: PROCESS (clk, rst)
-  BEGIN
-    IF rst ='0' THEN
-      bit_cnt <= "000";
-    ELSIF rising_edge(clk) THEN
-      IF tx_ip_sync ='0' THEN
-        bit_cnt <= "000";
-      ELSIF fs_ce ='1' AND stuff ='0' THEN
-        bit_cnt <= bit_cnt + 1;
-      END IF;
-    END IF;
-  END PROCESS;
+	p_bit_cnt: process (clk, rst) is
+	begin
+		if rst = '0' then
+			bit_cnt     <= "000";
+		elsif rising_edge(clk) then
+			if tx_ip_sync = '0' then
+				bit_cnt    <= "000";
+			elsif fs_ce = '1' and stuff = '0' then
+				bit_cnt    <= bit_cnt + 1;
+			end if;
+		end if;
+	end process p_bit_cnt;
 
-  p_sd_raw_o: PROCESS (clk)
-  BEGIN
-    IF rising_edge(clk) THEN
-      IF tx_ip_sync ='0' THEN
-        sd_raw_o <= '0';
-      ELSE
-        sd_raw_o <= hold_reg_d(CONV_INTEGER(UNSIGNED(bit_cnt)));
-      END IF;
-    END IF;
-  END PROCESS;
+	p_sd_raw_o: process (clk) is
+	begin
+		if rising_edge(clk) then
+			if tx_ip_sync = '0' then
+				sd_raw_o   <= '0';
+			else
+				sd_raw_o   <= hold_reg_d(CONV_INTEGER(UNSIGNED(bit_cnt)));
+			end if;
+		end if;
+	end process p_sd_raw_o;
 
-  p_sft_done: PROCESS (clk, rst)
-  BEGIN
-    IF rst ='0' THEN
-      sft_done   <= '0';
-      sft_done_r <= '0';
-    ELSIF rising_edge(clk) THEN
-      IF bit_cnt = "111" THEN
-        sft_done <= NOT stuff;
-      ELSE
-        sft_done <= '0';
-      END IF;
-      sft_done_r <= sft_done;
-    END IF;
-  END PROCESS;
+	p_sft_done: process (clk, rst) is
+	begin
+		if rst = '0' then
+			sft_done    <= '0';
+			sft_done_r  <= '0';
+		elsif rising_edge(clk) then
+			if bit_cnt = "111" then
+				sft_done   <= not stuff;
+			else
+				sft_done   <= '0';
+			end if;
+			sft_done_r  <= sft_done;
+		end if;
+	end process p_sft_done;
 
-  sft_done_e <= sft_done AND NOT sft_done_r;
+	sft_done_e    <= sft_done and not sft_done_r;
 
-  -- Out Data Hold Register
-  p_hold_reg: PROCESS (clk, rst)
-  BEGIN
-    IF rst ='0' THEN
-        hold_reg   <= X"00";
-        hold_reg_d <= X"00";
-    ELSIF rising_edge(clk) THEN
-      IF ld_sop_d ='1' THEN
-        hold_reg <= X"80";
-      ELSIF ld_data ='1' THEN
-        hold_reg <= DataOut_i;
-      END IF;
-      hold_reg_d <= hold_reg;
-    END IF;
-  END PROCESS;
+	-- Out Data Hold Register
+	p_hold_reg: process (clk, rst) is
+	begin
+		if rst = '0' then
+			hold_reg    <= X"00";
+			hold_reg_d  <= X"00";
+		elsif rising_edge(clk) then
+			if ld_sop_d = '1' then
+				hold_reg   <= X"80";
+			elsif ld_data = '1' then
+				hold_reg   <= DataOut_i;
+			end if;
+			hold_reg_d  <= hold_reg;
+		end if;
+	end process p_hold_reg;
 
---======================================================================================--
-  -- Bit Stuffer                                                                        --
---======================================================================================--
+	--======================================================================================--
+	-- Bit Stuffer                                                                        --
+	--======================================================================================--
 
-  p_one_cnt: PROCESS (clk, rst)
-  BEGIN
-    IF rst ='0' THEN
-      one_cnt <= "000";
-    ELSIF rising_edge(clk) THEN
-      IF tx_ip_sync ='0' THEN
-        one_cnt <= "000";
-      ELSIF fs_ce ='1' THEN
-        IF sd_raw_o ='0' OR stuff = '1' THEN
-          one_cnt <= "000";
-        ELSE
-          one_cnt <= one_cnt + 1;
-        END IF;
-      END IF;
-    END IF;
-  END PROCESS;
+	p_one_cnt: process (clk, rst) is
+	begin
+		if rst = '0' then
+			one_cnt     <= "000";
+		elsif rising_edge(clk) then
+			if tx_ip_sync = '0' then
+				one_cnt    <= "000";
+			elsif fs_ce = '1' then
+				if sd_raw_o = '0' or stuff = '1' then
+					one_cnt   <= "000";
+				else
+					one_cnt   <= one_cnt + 1;
+				end if;
+			end if;
+		end if;
+	end process p_one_cnt;
 
-  stuff   <= '1' WHEN one_cnt = "110" ELSE '0';
+	stuff <= '1' when one_cnt = "110" else '0';
 
-  p_sd_bs_o: PROCESS (clk, rst)
-  BEGIN
-    IF rst ='0' THEN
-      sd_bs_o <= '0';
-    ELSIF rising_edge(clk) THEN
-      IF fs_ce ='1' THEN
-        IF tx_ip_sync ='0' THEN
-          sd_bs_o <= '0';
-        ELSE
-          IF stuff ='1' THEN
-            sd_bs_o <= '0';
-          ELSE
-            sd_bs_o <= sd_raw_o;
-          END IF;
-        END IF;
-      END IF;
-    END IF;
-  END PROCESS;
+	p_sd_bs_o: process (clk, rst) is
+	begin
+		if rst = '0' then
+			sd_bs_o     <= '0';
+		elsif rising_edge(clk) then
+			if fs_ce = '1' then
+				if tx_ip_sync = '0' then
+					sd_bs_o   <= '0';
+				else
+					if stuff = '1' then
+						sd_bs_o  <= '0';
+					else
+						sd_bs_o  <= sd_raw_o;
+					end if;
+				end if;
+			end if;
+		end if;
+	end process p_sd_bs_o;
 
---======================================================================================--
-  -- NRZI Encoder                                                                       --
---======================================================================================--
+	--======================================================================================--
+	-- NRZI Encoder                                                                       --
+	--======================================================================================--
 
-  p_sd_nrzi_o: PROCESS (clk, rst)
-  BEGIN
-    IF rst ='0' THEN
-      sd_nrzi_o <= '1';
-    ELSIF rising_edge(clk) THEN
-      IF tx_ip_sync ='0' OR txoe_r1 ='0' THEN
-        sd_nrzi_o <= '1';
-      ELSIF fs_ce ='1' THEN
-        IF sd_bs_o ='1' THEN
-          sd_nrzi_o <= sd_nrzi_o;
-        ELSE
-          sd_nrzi_o <= NOT sd_nrzi_o;
-        END IF;
-      END IF;
-    END IF;
-  END PROCESS;
+	p_sd_nrzi_o: process (clk, rst) is
+	begin
+		if rst = '0' then
+			sd_nrzi_o   <= '1';
+		elsif rising_edge(clk) then
+			if tx_ip_sync = '0' or txoe_r1 = '0' then
+				sd_nrzi_o  <= '1';
+			elsif fs_ce = '1' then
+				if sd_bs_o = '1' then
+					sd_nrzi_o <= sd_nrzi_o;
+				else
+					sd_nrzi_o <= not sd_nrzi_o;
+				end if;
+			end if;
+		end if;
+	end process p_sd_nrzi_o;
 
---======================================================================================--
-  -- Output Enable Logic                                                                --
---======================================================================================--
+	--======================================================================================--
+	-- Output Enable Logic                                                                --
+	--======================================================================================--
 
-  p_txoe: PROCESS (clk, rst)
-  BEGIN
-    IF rst ='0' THEN
-      txoe_r1 <= '0';
-      txoe_r2 <= '0';
-      txoe    <= '1';
-    ELSIF rising_edge(clk) THEN
-      IF fs_ce ='1' THEN
-        txoe_r1 <= tx_ip_sync;
-        txoe_r2 <= txoe_r1;
-        txoe    <= NOT (txoe_r1 OR txoe_r2);
-      END IF;
-    END IF;
-  END PROCESS;
+	p_txoe: process (clk, rst) is
+	begin
+		if rst = '0' then
+			txoe_r1     <= '0';
+			txoe_r2     <= '0';
+			txoe        <= '1';
+		elsif rising_edge(clk) then
+			if fs_ce = '1' then
+				txoe_r1    <= tx_ip_sync;
+				txoe_r2    <= txoe_r1;
+				txoe       <= not (txoe_r1 or txoe_r2);
+			end if;
+		end if;
+	end process p_txoe;
 
---======================================================================================--
-  -- Output Registers                                                                   --
---======================================================================================--
+	--======================================================================================--
+	-- Output Registers                                                                   --
+	--======================================================================================--
 
-  p_txdpn: PROCESS (clk, rst)
-  BEGIN
-    IF rst ='0' THEN
-      txdp <= '1';
-      txdn <= '0';
-    ELSIF rising_edge(clk) THEN
-      IF fs_ce ='1' THEN
-        IF phy_mode ='1' THEN
-          txdp <= NOT append_eop AND     sd_nrzi_o;
-          txdn <= NOT append_eop AND NOT sd_nrzi_o;
-        ELSE
-          txdp <= sd_nrzi_o;
-          txdn <= append_eop;
-        END IF;
-      END IF;
-    END IF;
-  END PROCESS;
+	p_txdpn: process (clk, rst) is
+	begin
+		if rst = '0' then
+			txdp        <= '1';
+			txdn        <= '0';
+		elsif rising_edge(clk) then
+			if fs_ce = '1' then
+				if phy_mode = '1' then
+					txdp      <= not append_eop and sd_nrzi_o;
+					txdn      <= not append_eop and not sd_nrzi_o;
+				else
+					txdp      <= sd_nrzi_o;
+					txdn      <= append_eop;
+				end if;
+			end if;
+		end if;
+	end process p_txdpn;
 
---======================================================================================--
-  -- Tx Statemashine                                                                    --
---======================================================================================--
+	--======================================================================================--
+	-- Tx Statemashine                                                                    --
+	--======================================================================================--
 
-  any_eop_state <= state(3);
+	any_eop_state <= state(3);
 
-  p_state: PROCESS (clk, rst)
-  BEGIN
-    IF rst ='0' THEN
-      state <= IDLE_STATE;
-    ELSIF rising_edge(clk) THEN
-      IF any_eop_state = '0' THEN
-        CASE (state) IS
-          WHEN IDLE_STATE => IF TxValid_i ='1' THEN
-                               state <= SOP_STATE;
-                             END IF;
-          WHEN SOP_STATE  => IF sft_done_e ='1' THEN
-                               state <= DATA_STATE;
-                             END IF;
-          WHEN DATA_STATE => IF data_xmit ='0' AND sft_done_e ='1' THEN
-                               IF one_cnt = "101" AND hold_reg_d(7) = '1' THEN
-                                 state <= EOP0_STATE;
-                               ELSE
-                                 state <= EOP1_STATE;
-                               END IF;
-                             END IF;
-          WHEN WAIT_STATE => IF fs_ce = '1' THEN
-                               state <= IDLE_STATE;
-                             END IF;
-          WHEN OTHERS => state <= IDLE_STATE;
-        END CASE;
-      ELSE
-        IF fs_ce ='1' THEN
-          IF state = EOP5_state THEN
-            state <= WAIT_STATE;
-          ELSE
-            state <= unsigned(state) + 1;
-          END IF;
-        END IF;
-      END IF;
-    END IF;
-  END PROCESS;
+	p_state: process (clk, rst) is
+	begin
+		if rst = '0' then
+			state       <= IDLE_STATE;
+		elsif rising_edge(clk) then
+			if any_eop_state = '0' then
+				case (state) is
+					when IDLE_STATE =>
+						if TxValid_i = '1' then
+							state   <= SOP_STATE;
+						end if;
+					when SOP_STATE =>
+						if sft_done_e = '1' then
+							state   <= DATA_STATE;
+						end if;
+					when DATA_STATE =>
+						if data_xmit = '0' and sft_done_e = '1' then
+							if one_cnt = "101" and hold_reg_d(7) = '1' then
+								state  <= EOP0_STATE;
+							else
+								state  <= EOP1_STATE;
+							end if;
+						end if;
+					when WAIT_STATE =>
+						if fs_ce = '1' then
+							state   <= IDLE_STATE;
+						end if;
+					when others =>
+						state    <= IDLE_STATE;
+				end case;
+			else
+				if fs_ce = '1' then
+					if state = EOP5_state then
+						state    <= WAIT_STATE;
+					else
+						state    <= unsigned(state) + 1;
+					end if;
+				end if;
+			end if;
+		end if;
+	end process p_state;
 
-  append_eop <= '1' WHEN state(3 DOWNTO 2) = "11" ELSE '0';  -- EOP4_STATE OR EOP5_STATE
-  ld_sop_d   <= TxValid_i  WHEN state = IDLE_STATE ELSE '0';
-  ld_data_d  <= sft_done_e WHEN state = SOP_STATE OR (state = DATA_STATE AND data_xmit ='1') ELSE '0';
+	append_eop <= '1' when state(3 downto 2) = "11" else '0'; -- EOP4_STATE OR EOP5_STATE
+	ld_sop_d <= TxValid_i when state = IDLE_STATE else '0';
+	ld_data_d     <=
+		sft_done_e when state = SOP_STATE or (state = DATA_STATE and data_xmit = '1')
+		else '0';
 
-END RTL;
-
+end architecture RTL;
