@@ -76,6 +76,12 @@ sudo cp ghdl.so /usr/local/share/yosys/plugins/ghdl.so
 
 Note: If your plugin installs elsewhere, either adjust `scripts/synth.ys` to `plugin -i ghdl` (preferred when in default search path) or point to its full path.
 
+It's also worth noting, you'd be best served by using a formatter as well... In this case, i'd recommend https://vhdlfmt.com/releases/
+```
+wget https://releases.vhdlfmt.com/0.0.0-SNAPSHOT-7403572/vhdlfmt_0.0.0-SNAPSHOT-7403572_amd64.deb
+sudo dpkg -i vhdlfmt_0.0.0-SNAPSHOT-7403572_amd64.deb
+```
+
 ## Repo Layout
 
 - `vhdl/` — VHDL sources; top entity is `vhdl/top.vhd` (name: `top`).
