@@ -4,28 +4,28 @@ use ieee.numeric_std.all;
 
 entity honeycomb_fs_phy is
 	port (
-		rst_i : in STD_LOGIC; -- low = reset; high = normal
-		clk_48mhz_i : in STD_LOGIC;
-		fs_pu_o : out STD_LOGIC; -- output to pull up resistor; optional
+		rst_i : in std_logic; -- low = reset; high = normal
+		clk_48mhz_i : in std_logic;
+		fs_pu_o : out std_logic; -- output to pull up resistor; optional
 
 		-- usb interface
-		usb_dp_io : inout STD_LOGIC; -- ensure 1.5k pull up here
-		usb_dn_io : inout STD_LOGIC;
+		usb_dp_io : inout std_logic; -- ensure 1.5k pull up here
+		usb_dn_io : inout std_logic;
 
 		-- utmi tx interface
-		utmi_dout_i : in STD_LOGIC_VECTOR(7 downto 0); -- stage tx data here
-		utmi_txvalid_i : in STD_LOGIC; -- request to tx here; set high
-		utmi_txrdy_o : out STD_LOGIC; -- high = transmitting state
+		utmi_dout_i : in std_logic_vector(7 downto 0); -- stage tx data here
+		utmi_txvalid_i : in std_logic; -- request to tx here; set high
+		utmi_txrdy_o : out std_logic; -- high = transmitting state
 
 		-- utmi rx interface
-		utmi_din_o : out STD_LOGIC_VECTOR(7 downto 0); -- all rx line data here
-		utmi_rxvalid_o : out STD_LOGIC; -- high rx is good to read
-		utmi_rxactive_o : out STD_LOGIC; -- high if rx'ing
-		utmi_rxerror_o : out STD_LOGIC; -- high if error
+		utmi_din_o : out std_logic_vector(7 downto 0); -- all rx line data here
+		utmi_rxvalid_o : out std_logic; -- high rx is good to read
+		utmi_rxactive_o : out std_logic; -- high if rx'ing
+		utmi_rxerror_o : out std_logic; -- high if error
 
 		-- utmi debug interface
-		utmi_line_state_o : out STD_LOGIC_VECTOR(1 downto 0); -- probe bit 0 for usb state
-		utmi_usb_rst_o : out STD_LOGIC -- high if usb phy is being reset
+		utmi_line_state_o : out std_logic_vector(1 downto 0); -- probe bit 0 for usb state
+		utmi_usb_rst_o : out std_logic -- high if usb phy is being reset
 	);
 end entity honeycomb_fs_phy;
 
@@ -50,7 +50,7 @@ architecture rtl of honeycomb_fs_phy is
 		);
 	end component usb_phy;
 
-	signal rxdp, rxdn, txoe, txdp, txdn : STD_LOGIC;
+	signal rxdp, rxdn, txoe, txdp, txdn : std_logic;
 
 begin
 
