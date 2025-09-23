@@ -8,8 +8,8 @@ read_verilog \
  	verilog/usb_tx_phy.v
 
 ghdl --std=08 -fsynopsys -frelaxed-rules \
-	vhdl/top.vhd \
 	vhdl/handshake_sender.vhd \
+	vhdl/top.vhd \
 	-e top;
 
 # Run synth to iCE40 but keep working design in memory
