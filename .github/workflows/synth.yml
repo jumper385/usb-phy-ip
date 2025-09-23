@@ -1,50 +1,40 @@
-# .github/workflows/synth.yml
-name: Synthesize (Yosys+GHDL)
+name: synthesize
 
 on:
   push:
-    paths: ["**/*.vhd", "**/*.vhdl", "**/*.v", "scripts/**", ".github/workflows/synth.yml"]
+    paths: ["**/*.vhd", "**/*.vhdl", "**/*.v", "scripts/**", ".github/workflows/*synth.yml"]
   pull_request:
 
 jobs:
   synth:
     runs-on: ubuntu-latest
 
-    # Run the whole job inside the Docker image that already has yosys+ghdl
     container:
       image: hdlc/ghdl:yosys
 
     steps:
-      - name: Checkout
+      - name: checkout
         uses: actions/checkout@v4
 
       - name: install ice40 deps
         run: apt update && apt install nextpnr-ice40 iverilog gtkwave fpga-icestorm -y
 
-      - name: Run Yosys+GHDL (single command)
+      - name: build for ice40up5k 
         run: |
           yosys -V
-          yosys -s scripts/synth.ys
+          yosys -s scripts/ice40up5k_synth.ys
 
-      # Or, if you prefer to run your own script instead of the inline command:
-      # - name: Run build script
-      #   run: |
-      #     chmod +x scripts/build.sh
-      #     scripts/build.sh
+      - name: get current date
+        id: date
+        run: |
+          echo "now=$(date +'%y%m%d_%H%M%S')" >> $GITHUB_OUTPUT
 
-      # Optionally run nextpnr/icepack if your container/script provides them
-      # - name: Place & pack (optional)
-      #   run: |
-      #     nextpnr-ice40 --up5k --package sg48 --json build/leds.json --pcf io.pcf --asc build/leds.asc
-      #     icepack build/leds.asc build/leds.bin
-
-      - name: Upload artifacts
+      - name: upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: synth-artifacts
+          name: synth_artifacts_${{ steps.date.outputs.now }}
           path: |
             build/*
             *.json
             *.asc
             *.bin
-
