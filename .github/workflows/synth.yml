@@ -22,7 +22,7 @@ jobs:
       - name: build for ice40up5k 
         run: |
           yosys -V
-          yosys -s scripts/ice40up5k_synth.ys
+          yosys -s scripts/synth.ys
 
       - name: get current date
         id: date
