@@ -112,7 +112,11 @@ begin
 					else
 						-- out-of-sync, ignore
 					end if;
-
+				-- add a falling edge component which uses bit out_r to detect sync and send byte_received state
+				-- then process the length as an 11 bit message
+				-- then determine the next state
+				-- integrate rx_error and tx_error detection
+				
 
 					prev_level <= man_sync(2);
 				end if;
