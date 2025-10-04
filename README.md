@@ -142,6 +142,24 @@ endmodule
 - `top.asc`: Placed-and-routed ASCII bitstream.
 - `top.bin`: Final binary for programming (from `icepack`).
 
+## Simulation
+You can simulate VHDL IP with GHDL. To do this, you first need a manifest file that lists all the VHDL files needed to run the testbench. If you are using the `-fsynopsys` flag with GHDL, you will also need to order the files from lowest level of hierarchy to highest level of hierarchy.
+
+```
+vhdl/usb_tx_phy.vhdl vhdl/usb_rx_phy.vhdl vhdl/usb_phy.vhdl vhdl/usb_phy_tb.vhdl
+```
+
+You can now run the `run_test.sh` script to run the testbench. The script takes three arguments: the path to the manifest file, the name of the top-level testbench entity, and an optional simulation time with units (e.g., `100us`, `1ms`, etc.). If no time is provided, it defaults to `10us`.
+```
+./run_test.sh usb_phy.tb_manifest usb_phy_tb 100us
+```
+
+> ![IMPORTANT]
+> For the testbench to work correctly, you will need to order your file declarations properly - the files **MUST** be ordered from lowest level of hierarchy to highest level of hierarchy. The provided manifest file is already ordered correctly. 
+> This seems to be specific to when using the `-fsynopsys` flag with GHDL. Without this flag, GHDL seems to be able to sort the files itself and is able to infer more information from the imports.
+
+After running the script, you will be left with a `.ghw` file (GHDL waveform). You can view the `.ghw` file with `gtkwave` or equivalent. the `.ghw` file was selected because you can peer into the internal signals of the instantiated VHDL components, whereas a `.vcd` file will only show the top-level signals.
+
 ## Troubleshooting
 
 - GHDL plugin not found: change the first line in `scripts/synth.ys` to `plugin -i ghdl` if the plugin is in Yosys' default search path. Otherwise point to its actual `.so`.
