@@ -1,11 +1,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
-use ieee.std_logic_arith.all;
 
 entity usb_transceiver is
-    generic (
-		usb_rst_det : boolean := TRUE
-	);
     port (
         clk_i : in std_logic;
         rst_i : in std_logic;
@@ -35,12 +31,32 @@ architecture rtl of usb_transceiver is
     signal rxdp, rxdn : std_logic;
     signal txdp, txdn, txoe : std_logic;
 
+    component usb_phy
+        port (
+            clk : in std_logic;
+            rst : in std_logic;
+            phy_tx_mode : in std_logic;
+            usb_rst : out std_logic;
+            rxd : in std_logic;
+            rxdp : in std_logic;
+            rxdn : in std_logic;
+            txdp : out std_logic;
+            txdn : out std_logic;
+            txoe : out std_logic;
+            DataOut_i : in std_logic_vector(7 downto 0);
+            TxValid_i : in std_logic;
+            TxReady_o : out std_logic;
+            DataIn_o : out std_logic_vector(7 downto 0);
+            RxValid_o : out std_logic;
+            RxActive_o : out std_logic;
+            RxError_o : out std_logic;
+            LineState_o : out std_logic_vector(1 downto 0)
+        );
+    end component usb_phy;
+
 begin
 
-    usb_phy_inst : entity work.usb_phy
-    generic map (
-        usb_rst_det => usb_rst_det
-    )
+    usb_phy_inst : usb_phy
     port map (
         clk => clk_i,
         rst => rst_i,
@@ -62,7 +78,10 @@ begin
         LineState_o => line_state_o
     );
 
-    usb_dp_io <= txdp when txoe = '1' else 'Z';
-    usb_dn_io <= txdn when txoe = '1' else 'Z';
+    usb_dp_io <= txdp when txoe = '0' else 'Z';
+    usb_dn_io <= txdn when txoe = '0' else 'Z';
+
+    rxdp <= usb_dp_io;
+    rxdn <= usb_dn_io;
 
 end architecture rtl;

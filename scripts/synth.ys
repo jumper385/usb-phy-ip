@@ -10,6 +10,8 @@ read_verilog \
  	verilog/usb_tx_phy.v
 
 ghdl --std=08 -fsynopsys -frelaxed-rules \
+	vhdl/usb_transceiver.vhdl \
+	vhdl/device_ctrl.vhdl \
 	vhdl/top.vhd \
 	-e top;
 
