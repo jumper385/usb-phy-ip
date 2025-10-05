@@ -1,1 +1,1 @@
-vhdl/usb_tx_phy.vhdl vhdl/usb_rx_phy.vhdl vhdl/usb_phy.vhdl vhdl/usb_phy_tb.vhdl 
+vhdl/usb_tx_phy.vhdl vhdl/usb_rx_phy.vhdl vhdl/usb_phy.vhdl vhdl/usb_transceiver.vhdl vhdl/usb_phy_tb.vhdl
