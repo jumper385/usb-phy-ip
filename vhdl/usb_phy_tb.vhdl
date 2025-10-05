@@ -131,19 +131,26 @@ begin
 	);
 
 	-- USB bus connections (host to device)
-	usb_dp <= host_txdp when host_txoe = '0' else 'Z';
-	usb_dn <= host_txdn when host_txoe = '0' else 'Z';
+	-- Both host and device can drive the bus (with pull-ups for idle state)
+	usb_dp <= host_txdp when host_txoe = '0' else
+	          dev_txdp when dev_txoe = '0' else
+	          'H';  -- Weak pull-up for J-state (idle)
+	usb_dn <= host_txdn when host_txoe = '0' else
+	          dev_txdn when dev_txoe = '0' else
+	          'L';  -- Weak pull-down
 
-	-- Host receives from USB bus
+	-- Host receives from USB bus (but not its own transmission)
 	host_rxdp <= usb_dp;
 	host_rxdn <= usb_dn;
+	host_rxd <= usb_dp;
 	
-	-- Device receives from USB bus
+	-- Device receives from USB bus (but not its own transmission)
 	dev_rxdp <= usb_dp;
 	dev_rxdn <= usb_dn;
+	dev_rxd <= usb_dp; 
 
     -- send setup command as usb host
-    stim_proc: process is
+    host_stim_proc: process is
     begin
         -- hold reset state for 100 ns.
         rst <= '0';
@@ -155,16 +162,16 @@ begin
         host_DataOut_i <= "00000000";
         host_TxValid_i <= '1';
         wait until rising_edge(host_TxReady_o);
-        host_DataOut_i <= x"06";
+        host_DataOut_i <= x"2D";
         host_TxValid_i <= '1';
         wait until rising_edge(host_TxReady_o);
-        host_DataOut_i <= x"00";
+        host_DataOut_i <= x"EA";
         host_TxValid_i <= '1';
         wait until rising_edge(host_TxReady_o);
-        host_DataOut_i <= x"00";
+        host_DataOut_i <= x"BE";
         host_TxValid_i <= '1';
         wait until rising_edge(host_TxReady_o);
-        host_DataOut_i <= x"00";
+        host_DataOut_i <= x"EF";
         host_TxValid_i <= '1';
         wait until rising_edge(host_TxReady_o);
         wait for clk_period;
@@ -177,5 +184,22 @@ begin
         -- finish simulation
         wait;
     end process;
+
+	dev_stim_proc: process is
+	begin
+		wait until rising_edge(dev_RxValid_o);
+		assert dev_DataIn_o = x"DE" report "Unexpected data received" severity error;
+
+		wait until rising_edge(dev_RxValid_o);
+		assert dev_DataIn_o = x"EA" report "Unexpected data received" severity error;
+
+		wait until rising_edge(dev_RxValid_o);
+		assert dev_DataIn_o = x"BE" report "Unexpected data received" severity error;
+
+		wait until rising_edge(dev_RxValid_o);
+		assert dev_DataIn_o = x"EF" report "Unexpected data received" severity error;
+
+		wait;
+	end process;
 
 end architecture tb;
