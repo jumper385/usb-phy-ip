@@ -22,7 +22,7 @@ end entity manchester_decoder;
 architecture rtl of manchester_decoder is
 	signal man_sync : std_logic_vector(2 downto 0) := (others => '0');
 	signal prev_level : std_logic := '0';
-	signal tick_count : integer range 0 to OVERSAMPLE * 2 := 0;
+	signal tick_count : integer := 0;
 	signal bit_cnt : integer range 0 to BITS-1 := 0;
 	signal byte_shift : std_logic_vector(BITS-1 downto 0) := (others => '0');
 	--signal prev_bit : std_logic := '1';
@@ -69,7 +69,7 @@ begin
 
 					-- classify interval
 					if
-					interval > (OVERSAMPLE / 2 - 1) and interval < (OVERSAMPLE / 2 + 1) and
+					interval > (OVERSAMPLE / 2 - 3) and interval < (OVERSAMPLE / 2 + 2) and
 						prev_level /= bit_out_r then
 						-- half-bit interval
 						if prev_level = '0' and man_sync(2) = '1' then
@@ -91,7 +91,7 @@ begin
 
 
 					elsif
-					interval > (OVERSAMPLE - 1) and interval < (OVERSAMPLE + 1) and prev_level
+					interval > (OVERSAMPLE - 3) and interval < (OVERSAMPLE + 3) and prev_level
 						= bit_out_r then
 						-- full-bit interval
 						if prev_level = '0' and man_sync(2) = '1' then
