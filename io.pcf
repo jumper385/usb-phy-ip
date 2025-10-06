@@ -1,10 +1,10 @@
 set_io tram_wr_en 10
 set_io reset 20
 set_io dout 11
-set_io din_rd 28
+set_io din_rd 41
 set_io clk_100 13
-set_io dout_rd 25
-set_io bitt_out 40
-set_io bitt_in 41
+set_io dout_rd 40
+set_io bitt_out 25
+set_io bitt_in 28
 set_io din 12
 
