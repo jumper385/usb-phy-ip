@@ -1,18 +1,10 @@
-set_io rst_n 19
-
-set_io usb_dp 41 --pullup yes switch to 10 later
-set_io usb_dn 9 --pulldown yes
-
-set_io usb_pu 41 -- was 11 before
-set_io led 40
-
-set_io rx_valid 39
-set_io dbg_io 18
-
 set_io tram_wr_en 10
 set_io reset 20
-set_io clk_50 11
-set_io dout 25
-set_io enc_ena 12
+set_io dout 11
+set_io din_rd 28
 set_io clk_100 13
-set_io bitt_out 28
+set_io dout_rd 25
+set_io bitt_out 40
+set_io bitt_in 41
+set_io din 12
+

@@ -4,9 +4,9 @@ use ieee.numeric_std.all;
 
 entity manchester_decoder is
 	generic (
-		OVERSAMPLE : natural := 16; -- oversample factor (must match PLL output)
-		BAUD : natural := 1000000; -- Manchester bit rate
-		BITS : INTEGER := 10 -- Number of bits being processed out
+		OVERSAMPLE : natural := 8; -- oversample factor (must match PLL output)
+		BAUD : natural := 18000000; -- Manchester bit rate
+		BITS : INTEGER := 12 -- Number of bits being processed out
 	);
 	port (
 		clk_ovs : in std_logic; -- oversample clock from PLL (OVERSAMPLE BAUD)
@@ -42,7 +42,7 @@ begin
 		variable interval : integer;
 	begin
 		if rising_edge(clk_ovs) then
-			if reset = '1' then
+			if reset = '0' then
 				man_sync <= (others => '0');
 				prev_level <= '0';
 				tick_count <= 0;
@@ -69,7 +69,7 @@ begin
 
 					-- classify interval
 					if
-					interval > (OVERSAMPLE / 2 - 3) and interval < (OVERSAMPLE / 2 + 1) and
+					interval > (OVERSAMPLE / 2 - 1) and interval < (OVERSAMPLE / 2 + 1) and
 						prev_level /= bit_out_r then
 						-- half-bit interval
 						if prev_level = '0' and man_sync(2) = '1' then
@@ -91,7 +91,7 @@ begin
 
 
 					elsif
-					interval > (OVERSAMPLE - 3) and interval < (OVERSAMPLE + 3) and prev_level
+					interval > (OVERSAMPLE - 1) and interval < (OVERSAMPLE + 1) and prev_level
 						= bit_out_r then
 						-- full-bit interval
 						if prev_level = '0' and man_sync(2) = '1' then
