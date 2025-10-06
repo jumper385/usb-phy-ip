@@ -98,6 +98,35 @@ begin
 		rx_error_o => dev_rx_error_o
 	);
 
+	dev_shim : entity work.utmi_shim
+	port map (
+		clk_i => clk,
+		rst_i => rst,
+
+		utmi_data_tx_out_o => dev_data_tx_out_i,
+		utmi_tx_valid_o => dev_tx_valid_i,
+		utmi_tx_ready_i => dev_tx_ready_o,
+		utmi_data_rx_in_i => dev_data_rx_in_o,
+		utmi_rx_valid_i => dev_rx_valid_o,
+		utmi_rx_active_i => dev_rx_active_o,
+		utmi_rx_error_i => dev_rx_error_o,
+
+		shim_rx_active_o => open,
+		shim_rx_next_o => open,
+		shim_rx_data_o => open,
+
+		shim_tx_first_i => '0',
+		shim_tx_next_o => open,
+		shim_tx_last_i => '0',
+		shim_tx_next_i => '1',
+		shim_tx_data_i => (others => '0'),
+
+		shim_hs_pid_o => open,
+		shim_hs_pid_i => (others => '0'),
+		shim_hs_req_i => '0',
+		shim_hs_next_i => open
+	);
+
 	-- USB Pull Resistor Modeling
 	-- Device has 1.5kΩ pull-up on D+ (indicates Full Speed device)
 	-- Host/Hub has 15kΩ pull-downs on both D+ and D-
