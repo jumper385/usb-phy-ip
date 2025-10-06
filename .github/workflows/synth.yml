@@ -3,7 +3,7 @@ name: Synthesize (Yosys+GHDL)
 
 on:
   push:
-    paths: ["**/*.vhd", "**/*.vhdl", "**/*.v", "scripts/**", ".github/workflows/synth.yml"]
+    paths: ["**/*.vhd", "**/*.vhdl", "**/*.v", "scripts/**", ".github/workflows/synth.yml", "*.pcf"]
   pull_request:
 
 jobs:
