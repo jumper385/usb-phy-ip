@@ -54,9 +54,6 @@ begin
 	end process gen_60mhz;
 
 	host_uut: entity work.usb_transceiver
-	generic map (
-		usb_rst_det => TRUE
-	)
 	port map (
 		clk_i => clk,
 		rst_i => rst,
@@ -73,9 +70,6 @@ begin
 	);
 
 	dev_uut: entity work.usb_transceiver
-	generic map (
-		usb_rst_det => TRUE
-	)
 	port map (
 		clk_i => clk,
 		rst_i => rst,

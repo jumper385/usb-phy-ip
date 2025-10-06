@@ -20,7 +20,7 @@ end entity device_ctrl;
 architecture rtl of device_ctrl is
 
     type state_type is (IDLE, SETUP, DATA, SEND_ACK, EP0, SEND_NAK);
-    signal current_state: state_type := IDLE;
+    signal current_state, next_state: state_type := IDLE;
     signal setup_data_count : integer := 0;
 
     component usb_transceiver
@@ -42,58 +42,60 @@ architecture rtl of device_ctrl is
 
 begin
 
-    process(current_state, data_rx_in_i, rx_valid_i, tx_ready_i)
+    process(clk_i, rst_i)
     begin
-        if rising_edge(rx_valid_i) and data_rx_in_i = x"55" then
-            current_state <= SETUP;
-            setup_data_count <= 0;
+        if rst_i = '0' then
+            current_state <= IDLE;
+        elsif rising_edge(clk_i) then
+            current_state <= next_state;
         end if;
+    end process;
 
-        if current_state = SETUP then
-            if rx_valid_i = '1' then
-                if data_rx_in_i = x"C3" then
-                    current_state <= DATA;
-                    setup_data_count <= 10;
-                end if;
-            end if;
-        end if;
+    process(current_state, tx_ready_i, rx_valid_i, rx_active_i, data_rx_in_i, setup_data_count)
+    begin
+        case current_state is
+            when IDLE => 
 
-        if current_state = DATA then
-            if rx_active_i = '0' then
                 setup_data_count <= 0;
-                current_state <= SEND_ACK;
-            end if;
-        end if;
-
-        if current_state = SEND_ACK then
-            data_tx_out_o <= x"D2";
-            tx_valid_o <= '1';
-
-            if falling_edge(tx_ready_i) then
                 tx_valid_o <= '0';
-                current_state <= EP0;
-            end if;
-        end if;
+                data_tx_out_o <= (others => '0');
 
-        if current_state = EP0 then
-            if rx_valid_i = '0' then
-                if data_rx_in_i = x"69" then
-                    current_state <= SEND_NAK;
+                if rx_valid_i = '1' and rx_active_i = '1' then
+                    next_state <= SETUP;
+                else
+                    next_state <= IDLE;
                 end if;
-            end if;
-        end if;
-
-        if current_state = SEND_NAK then
-            data_tx_out_o <= x"5A";
-            tx_valid_o <= '1';
-
-            if falling_edge(tx_ready_i) then
+            
+            when SETUP =>
+                setup_data_count <= 10;
                 tx_valid_o <= '0';
-                current_state <= EP0;
-            else
-                current_state <= IDLE;
-            end if;
-        end if;
+                data_tx_out_o <= (others => '0');
+
+                if rx_active_i = '0' then
+                    next_state <= DATA;
+                else
+                    next_state <= SETUP;
+                end if;
+            
+            when DATA =>
+                if rx_active_i = '0' then
+                    next_state <= IDLE;
+                end if;
+            
+            when SEND_ACK =>
+                data_tx_out_o <= x"D2"; -- ACK token
+                tx_valid_o <= '1';
+
+                if tx_ready_i = '1' then
+                    tx_valid_o <= '0';
+                    next_state <= EP0;
+                else
+                    next_state <= SEND_ACK;
+                end if;
+
+            when others => 
+                next_state <= IDLE;
+        end case;
 
     end process;
 
