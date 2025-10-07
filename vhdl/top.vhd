@@ -245,7 +245,7 @@ man_enc : manchester_encoder
 
 clkd_25 : clk_divider
 	GENERIC map(
-        N => 1
+        N => 3
     )
     PORT map (
         clk_in => clk_100,
@@ -255,7 +255,7 @@ clkd_25 : clk_divider
 
 clkd_50 : clk_divider
 	GENERIC map(
-        N => 0
+        N => 1
     )
     PORT map (
         clk_in => clk_100,
@@ -308,7 +308,7 @@ man_dec : manchester_decoder
 		BITS => 12 -- Number of bits being processed out
 	)
 	port map (
-		clk_ovs => clk_200, -- oversample clock from PLL (OVERSAMPLE BAUD)
+		clk_ovs => clk_100, -- oversample clock from PLL (OVERSAMPLE BAUD)
 		reset => reset,
 		man_in => din, -- Manchester encoded input
 		bit_valid => bit_valid, -- one-cycle pulse when bit_out is valid
@@ -330,10 +330,10 @@ man_dec : manchester_decoder
 	-- );
     
     -- clk_tx <= tx_clk;
-	bitt_out <= clk_25;
+	bitt_out <= bit_out;
 	din_rd <= din;
-	bitt_in <= clk_200;
-	dout <= clk_50;
+	bitt_in <= bit_in;
+	dout <= dout_wr;
 	dout_rd <= dout_wr;
 -- tx_clk => clock A
 -- enc_clk => BITS * clock A
