@@ -91,17 +91,18 @@ end component;
         rst : IN STD_LOGIC;
 		-- Indicators from other blocks to trigger states
         tx_ready : IN STD_LOGIC; -- indication from EC to start reading TX_RAM and transmit
-		-- rx_received : IN STD_LOGIC; -- indication from the RX line that a light message is incoming
+		rx_received : IN STD_LOGIC; -- indication from the RX line that a light message is incoming
 		-- host_align : IN STD_LOGIC;
 		-- device_align : IN STD_LOGIC;
 		-- Add error signals that suggest to go to idle state?
-		-- rx_error : OUT STD_LOGIC;
-		-- tx_error : OUT STD_LOGIC;
+		rx_error : OUT STD_LOGIC;
+		tx_error : OUT STD_LOGIC;
 		-- host : IN STD_LOGIC;
         ena_t : out std_logic;
-        message_sent : in std_logic
-        -- rx_done : in std_logic;
+        message_sent : in std_logic;
         -- aligned : in std_logic
+		ena_r : out std_logic;
+        rx_done : in std_logic
 
     );
 END component;
@@ -147,6 +148,26 @@ component manchester_decoder is
 	);
 end component;
 
+component deserialiser is
+	generic(
+		BITS : INTEGER := 12; -- Number of bits being encoded
+		mlength : INTEGER := 11 -- Number of bits in the length message (not including the sync)
+	);
+	port (
+		clk : in STD_LOGIC;
+		rx_message : out STD_LOGIC_VECTOR(BITS-1 downto 0); -- data to load into RAM
+		rx_length : out std_logic_vector (mlength-1 downto 0); -- Received length 
+		byte_in : in STD_LOGIC_VECTOR(BITS-1 downto 0); -- byte from manchester_decoder
+		wr_addr : out STD_LOGIC_VECTOR (mlength-1 downto 0); -- Address to RX_RAM
+		rx_done : out STD_LOGIC; -- signal to LT controller
+		reset : in STD_LOGIC; -- global reset
+		byte_ready : in STD_LOGIC; -- byte ready from manchester_decoder
+        rx_error : out STD_LOGIC; -- RE to LT controller
+        ena_r : in STD_LOGIC; -- enable from LT controller
+        tx_error : out STD_LOGIC -- TE to LT controller
+	);
+end component;
+
 -- component SB_HFOSC is
 -- 		generic (
 -- 			CLKHF_DIV : STRING := "0b00"
@@ -159,28 +180,28 @@ end component;
 -- 	end component SB_HFOSC;
 
 	signal tx_ready, tram_rd_en : std_logic := '0';
-	signal tram_in, tram_out : std_logic_vector (11 downto 0);
+	signal tram_in, tram_out, rram_in, rram_out : std_logic_vector (11 downto 0);
 	-- signal tx_clk : std_logic;
- 	signal tram_raddr_i,tram_waddr_i : std_logic_vector (10 downto 0);
+ 	signal tram_raddr_i,tram_waddr_i, rram_waddr_i, rram_raddr_i : std_logic_vector (10 downto 0);
 	signal tx_length : std_logic_vector (10 downto 0) := "00001111111";
-	signal ena_t : std_logic;
+	signal rx_length : std_logic_vector (10 downto 0);
+	signal ena_t, ena_r : std_logic;
 	signal message_sent : std_logic := '0';
     signal bit_out : std_logic;
 	signal clk_25, clk_50, clk_200 : std_logic;
 	signal bit_valid : std_logic;
 	signal bit_in : std_logic;
-	signal EC_in : STD_LOGIC_VECTOR (11 downto 0);
 	signal byte_ready : std_logic;
 	signal dout_wr : std_logic;
-
-	-- signal rx_received : std_logic := '0'; -- indication from the RX line that a light message is incoming
+	signal rx_message : STD_LOGIC_VECTOR (11 downto 0);	
+	signal rx_received : std_logic := '0'; -- indication from the RX line that a light message is incoming
 	-- signal host_align : std_logic := '0';
 	-- signal device_align : std_logic := '0';
 	-- 	-- Add error signals that suggest to go to idle state?
-	-- signal rx_error : std_logic := '0';
-	-- signal tx_error : std_logic := '0';
+	signal rx_error : std_logic := '0';
+	signal tx_error : std_logic := '0';
 	-- signal host : std_logic := '0';
-	-- signal rx_done : std_logic := '0';
+	signal rx_done : std_logic := '0';
 	-- signal aligned : std_logic := '0';
 
 
@@ -265,20 +286,21 @@ clkd_50 : clk_divider
 
 lt_fsm : LT_controller
     PORT MAP(
-        fsm_clk => clk_25,
+        fsm_clk => clk_100,
         rst => reset,
 		-- Indicators from other blocks to trigger states
         tx_ready => tx_ready, -- indication from EC to start reading TX_RAM and transmit
-		-- rx_received => rx_received, -- indication from the RX line that a light message is incoming
+		rx_received => rx_received, -- indication from the RX line that a light message is incoming
 		-- host_align => host_align,
 		-- device_align => device_align,
 		-- -- Add error signals that suggest to go to idle state?
-		-- rx_error => rx_error,
-		-- tx_error => tx_error,
+		rx_error => rx_error,
+		tx_error => tx_error,
 		-- host => host,
         ena_t => ena_t,
-        message_sent => message_sent
-		-- rx_done => rx_done,
+		ena_r => ena_r,
+        message_sent => message_sent,
+		rx_done => rx_done
 		-- aligned => aligned
     );
 
@@ -301,6 +323,21 @@ port map (
 	RESETB => reset
 );
 
+ram_rx : ram 
+    generic map (
+        addr_width => 11, -- 2048 x 12
+        data_width => 12
+    )
+    port map (
+        write_en => ena_r,
+        waddr  => rram_waddr_i,
+        wclk  => byte_ready,
+        raddr  => rram_raddr_i, -- EC side
+        rclk   => clk_25,-- EC side
+        din  => rram_in,
+        dout => rram_out -- EC side
+    );
+
 man_dec : manchester_decoder
 	generic map (
 		OVERSAMPLE => 8, -- oversample factor (must match PLL output)
@@ -313,11 +350,28 @@ man_dec : manchester_decoder
 		man_in => din, -- Manchester encoded input
 		bit_valid => bit_valid, -- one-cycle pulse when bit_out is valid
 		bit_out => bit_in, -- decoded bit for debugging/testing
-		byte_out => EC_IN,
+		byte_out => rx_message,
 		byte_ready => byte_ready -- pulse when byte_out is valid
 	);
 
-
+deser : deserialiser
+	generic map(
+		BITS => 12, -- Number of bits being encoded
+		mlength => 11 -- Number of bits in the length message (not including the sync)
+	)
+	port map (
+		clk => clk_100,
+		rx_message => rram_in,  -- data to load into RAM
+		rx_length => rx_length, -- Received length 
+		byte_in => rx_message, -- byte from manchester_decoder
+		wr_addr => rram_waddr_i, -- Address to RX_RAM
+		rx_done => rx_done, -- signal to LT controller
+		reset => reset, -- global reset
+		byte_ready => byte_ready, -- byte ready from manchester_decoder
+        rx_error => rx_error, -- RE to LT controller
+        ena_r => ena_r, -- enable from LT controller
+        tx_error => tx_error -- TE to LT controller
+	);
 
 	-- 	u_osc: component SB_HFOSC
 	-- generic map (

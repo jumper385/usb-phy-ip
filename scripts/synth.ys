@@ -19,6 +19,7 @@ ghdl --std=08 -fsynopsys -frelaxed-rules \
 	vhdl/clk_divide.vhd \
 	vhdl/manchester_decoder.vhd \
 	vhdl/pll_clk.vhd \
+	vhdl/deserialiser.vhd \
 	-e top;
 
 # Run synth to iCE40 but keep working design in memory

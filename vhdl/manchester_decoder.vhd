@@ -15,6 +15,7 @@ entity manchester_decoder is
 		bit_valid : out std_logic; -- one-cycle pulse when bit_out is valid
 		bit_out : out std_logic; -- decoded bit for debugging/testing
 		byte_out : out std_logic_vector(BITS-1 downto 0);
+		rx_received : out std_logic;
 		byte_ready : out std_logic -- pulse when byte_out is valid
 	);
 end entity manchester_decoder;
@@ -59,7 +60,7 @@ begin
 				-- default outputs
 				bit_valid_r <= '0';
 				byte_ready_r <= '0';
-
+				rx_received <= '0';
 				tick_count <= tick_count + 1;
 
 				-- detect edge
@@ -80,7 +81,10 @@ begin
 						bit_valid_r <= '1';
 						--prev_bit <= bit_out_r;
 						byte_shift <= byte_shift(BITS-2 downto 0) & man_sync(2);
-						if bit_cnt = BITS-1 then
+						if bit_cnt = 8 then
+							rx_received <= '1';
+							bit_cnt <= bit_cnt + 1;
+						elsif bit_cnt = BITS-1 then
 							byte_out_r <= byte_shift(BITS-2 downto 0) & man_sync(2);
 							byte_ready_r <= '1';
 							bit_cnt <= 0;
@@ -101,7 +105,10 @@ begin
 						end if;
 						bit_valid_r <= '1';
 						byte_shift <= byte_shift(BITS-2 downto 0) & man_sync(2);
-						if bit_cnt = BITS-1 then
+						if bit_cnt = 8 then
+							bit_cnt <= bit_cnt + 1;
+							rx_received <= '1';
+						elsif bit_cnt = BITS-1 then
 							byte_out_r <= byte_shift(BITS-2 downto 0) & man_sync(2);
 							byte_ready_r <= '1';
 							bit_cnt <= 0;
