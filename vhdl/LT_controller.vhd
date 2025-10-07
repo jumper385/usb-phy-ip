@@ -96,30 +96,31 @@ BEGIN
                     ns <= RX;
                     ena_r_s <= '1';
                 END IF;	
-		    -- WHEN RE =>
-            --     IF (RE_count <3) THEN
-			-- 		-- transition variable changes
-			-- 		-- make message the TX_error message
-			-- 		-- setup for transmit
-			-- 		-- turn off rx_error signal
+		    WHEN RE =>
+                NS <= ID;
+                -- IF (RE_count <3) THEN
+				-- 	-- transition variable changes
+				-- 	-- make message the TX_error message
+				-- 	-- setup for transmit
+				-- 	-- turn off rx_error signal
 
-            --         ns <= TX;
-            --     ELSE
-            --         ns <= HF;
-            --     END IF;
-            -- WHEN TE =>
+                --     ns <= TX;
+                -- ELSE
+                --     ns <= HF;
+                -- END IF;
+            WHEN TE =>
+                    NS <= ID;
+                -- IF (TE_count < 3) THEN
+				-- 	-- transition variable changes
+				-- 	-- enable TX for a retransmit
+				-- 	-- indicate to other controllers TX retransmit in action
+				-- 	-- Turn tx_error off
 
-            --     IF (TE_count < 3) THEN
-			-- 		-- transition variable changes
-			-- 		-- enable TX for a retransmit
-			-- 		-- indicate to other controllers TX retransmit in action
-			-- 		-- Turn tx_error off
+                --     ns <= TX;
+                -- ELSE
 
-            --         ns <= TX;
-            --     ELSE
-
-            --         ns <= HF;
-            --     END IF;
+                --     ns <= HF;
+                -- END IF;
 		    --  WHEN HF =>
 			-- 		-- tell higher level controller in hard fault then send to align state?
             --     IF (host = '1') THEN
