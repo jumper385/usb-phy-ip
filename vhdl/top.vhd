@@ -330,10 +330,10 @@ man_dec : manchester_decoder
 	-- );
     
     -- clk_tx <= tx_clk;
-	bitt_out <= bit_out;
+	bitt_out <= clk_25;
 	din_rd <= din;
 	bitt_in <= clk_200;
-	dout <= dout_wr;
+	dout <= clk_50;
 	dout_rd <= dout_wr;
 -- tx_clk => clock A
 -- enc_clk => BITS * clock A
