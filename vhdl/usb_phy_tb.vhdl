@@ -85,19 +85,6 @@ begin
 		line_state_o => dev_line_state_o
 	);
 
-	dev_ctrl: entity work.device_ctrl
-	port map (
-		clk_i => clk,
-		rst_i => rst,
-		data_tx_out_o => dev_data_tx_out_i,
-		tx_valid_o => dev_tx_valid_i,
-		tx_ready_i => dev_tx_ready_o,
-		data_rx_in_i => dev_data_rx_in_o,
-		rx_valid_i => dev_rx_valid_o,
-		rx_active_i => dev_rx_active_o,
-		rx_error_o => dev_rx_error_o
-	);
-
 	dev_shim : entity work.utmi_shim
 	port map (
 		clk_i => clk,
@@ -122,9 +109,8 @@ begin
 		shim_tx_data_i => (others => '0'),
 
 		shim_hs_pid_o => open,
-		shim_hs_pid_i => (others => '0'),
-		shim_hs_req_i => '0',
-		shim_hs_next_i => open
+		shim_hs_det_o => open,
+		shim_hs_send_ack_i => '0'
 	);
 
 	-- USB Pull Resistor Modeling

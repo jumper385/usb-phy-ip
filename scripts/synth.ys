@@ -12,6 +12,7 @@ read_verilog \
 ghdl --std=08 -fsynopsys -frelaxed-rules \
 	vhdl/usb_transceiver.vhdl \
 	vhdl/device_ctrl.vhdl \
+	vhdl/utmi_shim.vhdl \
 	vhdl/top.vhd \
 	-e top;
 

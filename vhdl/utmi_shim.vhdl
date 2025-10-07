@@ -226,6 +226,9 @@ begin
 	hs_combi_logic: process(hs_cs) is
 	begin
 
+			utmi_tx_valid_o <= '0';
+			utmi_data_tx_out_o <= (others => '0');
+
 		case hs_cs is	
 
 			when HS_IDLE =>
