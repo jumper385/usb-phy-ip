@@ -386,7 +386,7 @@ deser : deserialiser
 	-- );
     
     -- clk_tx <= tx_clk;
-	bitt_out <= bit_out;
+	bitt_out <= din;
 	din_rd <= din;
 	bitt_in <= bit_in;
 	dout <= dout_wr;
