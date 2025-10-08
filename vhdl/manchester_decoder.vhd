@@ -12,6 +12,7 @@ entity manchester_decoder is
 		clk_ovs : in std_logic; -- oversample clock from PLL (OVERSAMPLE BAUD)
 		reset : in std_logic;
 		man_in : in std_logic; -- Manchester encoded input
+		rx_done : in std_logic; -- signal from deserialiser to reset bit_out
 		bit_valid : out std_logic; -- one-cycle pulse when bit_out is valid
 		bit_out : out std_logic; -- decoded bit for debugging/testing
 		byte_out : out std_logic_vector(BITS-1 downto 0);
@@ -53,6 +54,15 @@ begin
 				bit_valid_r <= '0';
 				byte_ready_r <= '0';
 				--prev_bit <= '1';
+			elsif (rx_done = '1') then
+				man_sync <= (others => '0');
+				prev_level <= '0';
+				tick_count <= 0;
+				bit_cnt <= 0;
+				byte_shift <= (others => '0');
+				bit_out_r <= '0';
+				bit_valid_r <= '0';
+				byte_ready_r <= '0';
 			else
 				-- shift register for metastability protection
 				man_sync <= man_sync(1 downto 0) & man_in;

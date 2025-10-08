@@ -49,11 +49,11 @@ begin
                         length_received_w <= '0';
                     end if;
 				else -- once the length is sent, start sending the message
-                    case rx_length(mlength -1 downto mlength -4) is
+                    case rx_length_wr(mlength -1 downto mlength -4) is
                         when "1111" =>
                             tx_error <= '1';
                         when "1000"|"0010"|"0001"|"0100"|"0011"|"0110"|"0111"|"0101"|"0000" =>
-                            if (r_count = rx_length_wr) then
+                            if (r_count > rx_length_wr) then
                                 rx_done <= '1';
                                 r_count <= (others => '0');
                                 length_received_w <= '0';

@@ -95,8 +95,8 @@ end component;
 		-- host_align : IN STD_LOGIC;
 		-- device_align : IN STD_LOGIC;
 		-- Add error signals that suggest to go to idle state?
-		rx_error : OUT STD_LOGIC;
-		tx_error : OUT STD_LOGIC;
+		rx_error : IN STD_LOGIC;
+		tx_error : IN STD_LOGIC;
 		-- host : IN STD_LOGIC;
         ena_t : out std_logic;
         message_sent : in std_logic;
@@ -141,6 +141,7 @@ component manchester_decoder is
 		clk_ovs : in std_logic; -- oversample clock from PLL (OVERSAMPLE BAUD)
 		reset : in std_logic;
 		man_in : in std_logic; -- Manchester encoded input
+		rx_done : in std_logic; -- signal from deserialiser to reset bit_out
 		bit_valid : out std_logic; -- one-cycle pulse when bit_out is valid
 		bit_out : out std_logic; -- decoded bit for debugging/testing
 		byte_out : out std_logic_vector(BITS-1 downto 0);
@@ -348,6 +349,7 @@ man_dec : manchester_decoder
 		clk_ovs => clk_100, -- oversample clock from PLL (OVERSAMPLE BAUD)
 		reset => reset,
 		man_in => din, -- Manchester encoded input
+		rx_done => rx_done,
 		bit_valid => bit_valid, -- one-cycle pulse when bit_out is valid
 		bit_out => bit_in, -- decoded bit for debugging/testing
 		byte_out => rx_message,
