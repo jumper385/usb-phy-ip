@@ -189,7 +189,7 @@ end component;
 	signal ena_t, ena_r : std_logic;
 	signal message_sent : std_logic := '0';
     signal bit_out : std_logic;
-	signal clk_25, clk_50, clk_200 : std_logic;
+	signal clk_25, clk_50, clk_120 : std_logic;
 	signal bit_valid : std_logic;
 	signal bit_in : std_logic;
 	signal byte_ready : std_logic;
@@ -267,22 +267,22 @@ man_enc : manchester_encoder
 
 clkd_25 : clk_divider
 	GENERIC map(
-        N => 3
+        N => 1
     )
     PORT map (
-        clk_in => clk_100,
+        clk_in => clk_120,
         reset => reset,
-        clk_out => clk_25
+        clk_out => clk_25 -- Set as the quarter speed
     );
 
 clkd_50 : clk_divider
 	GENERIC map(
-        N => 1
+        N => 0
     )
     PORT map (
         clk_in => clk_100,
         reset => reset,
-        clk_out => clk_50
+        clk_out => clk_50 -- Set as the half speed
     );
 
 lt_fsm : LT_controller
@@ -309,13 +309,13 @@ pll_200 : component SB_PLL40_CORE
 generic map(
 
 	-- fout = fin * (DIVF + 1) / (2^DIVQ * (DIVR + 1))
-	DIVR => 7,
+	DIVR => 11,
 	DIVF => 1,
-	DIVQ => 1
+	DIVQ => 4
 )
 port map (
 	REFERENCECLK => clk_100,
-	PLLOUTCORE => clk_200,
+	PLLOUTCORE => clk_120,
 	PLLOUTGLOBAL => open,
 	EXTFEEDBACK => '0',
 	DYNAMICDELAY => (others => '0'),
@@ -388,7 +388,7 @@ deser : deserialiser
     -- clk_tx <= tx_clk;
 	bitt_out <= bit_out;
 	din_rd <= din;
-	bitt_in <= dout_wr;
+	bitt_in <= bit_in;
 	dout <= dout_wr;
 	dout_rd <= dout_wr;
 -- tx_clk => clock A
