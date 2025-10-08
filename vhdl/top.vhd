@@ -386,9 +386,9 @@ deser : deserialiser
 	-- );
     
     -- clk_tx <= tx_clk;
-	bitt_out <= din;
+	bitt_out <= bit_out;
 	din_rd <= din;
-	bitt_in <= bit_in;
+	bitt_in <= dout_wr;
 	dout <= dout_wr;
 	dout_rd <= dout_wr;
 -- tx_clk => clock A
