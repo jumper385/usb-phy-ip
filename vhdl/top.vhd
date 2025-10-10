@@ -286,7 +286,7 @@ clkd_50 : clk_divider
         N => 0
     )
     PORT map (
-        clk_in => clk_100,
+        clk_in => clk_120,
         reset => reset,
         clk_out => clk_50 -- Set as the half speed
     );
