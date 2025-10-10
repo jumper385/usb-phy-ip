@@ -61,6 +61,8 @@ component serialiser is
 		rd_addr : out STD_LOGIC_VECTOR (mlength-1 downto 0);
 		message_sent : out STD_LOGIC;
 		reset : in STD_LOGIC;
+		tx_err_sent : out STD_LOGIC;
+		tx_error : in STD_LOGIC;
 		ena_t : in STD_LOGIC
 	);
 end component;
@@ -96,6 +98,7 @@ end component;
 		-- device_align : IN STD_LOGIC;
 		-- Add error signals that suggest to go to idle state?
 		rx_error : IN STD_LOGIC;
+		tx_err_sent : IN STD_LOGIC;
 		tx_error : IN STD_LOGIC;
 		-- host : IN STD_LOGIC;
         ena_t : out std_logic;
@@ -196,6 +199,7 @@ end component;
 	signal dout_wr : std_logic;
 	signal rx_message : STD_LOGIC_VECTOR (11 downto 0);	
 	signal rx_received : std_logic := '0'; -- indication from the RX line that a light message is incoming
+	signal tx_err_sent : STD_LOGIC;
 	-- signal host_align : std_logic := '0';
 	-- signal device_align : std_logic := '0';
 	-- 	-- Add error signals that suggest to go to idle state?
@@ -253,6 +257,8 @@ serial : serialiser
 		rd_addr => tram_raddr_i,
 		message_sent => message_sent,
 		reset => reset,
+		tx_err_sent => tx_err_sent,
+		tx_error => tx_error,
 		ena_t => ena_t 
 	);
 
@@ -296,6 +302,7 @@ lt_fsm : LT_controller
 		-- device_align => device_align,
 		-- -- Add error signals that suggest to go to idle state?
 		rx_error => rx_error,
+		tx_err_sent => tx_err_sent,
 		tx_error => tx_error,
 		-- host => host,
         ena_t => ena_t,

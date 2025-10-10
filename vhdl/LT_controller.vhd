@@ -13,6 +13,7 @@ ENTITY LT_controller IS
 		-- device_align : IN STD_LOGIC;
 		-- Add error signals that suggest to go to idle state?
 		rx_error : in STD_LOGIC;
+        tx_err_sent : IN STD_LOGIC;
 		tx_error : in STD_LOGIC;
 		-- host : IN STD_LOGIC;
         ena_t : out std_logic;
@@ -97,7 +98,12 @@ BEGIN
                     ena_r_s <= '1';
                 END IF;	
 		    WHEN RE =>
-                NS <= ID;
+                If (tx_err_sent = '1') then
+                    NS <= ID;
+                else
+                    NS <= RE;
+                end if;
+
                 -- IF (RE_count <3) THEN
 				-- 	-- transition variable changes
 				-- 	-- make message the TX_error message
@@ -109,7 +115,16 @@ BEGIN
                 --     ns <= HF;
                 -- END IF;
             WHEN TE =>
-                    NS <= ID;
+                IF (message_sent = '1') then
+                    ns <= ID;
+                    ena_t_s <= '0';
+                else
+                    ns <= TE;
+                    ena_t_s <= '1';
+                END IF;
+
+
+                
                 -- IF (TE_count < 3) THEN
 				-- 	-- transition variable changes
 				-- 	-- enable TX for a retransmit
