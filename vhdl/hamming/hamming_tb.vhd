@@ -34,13 +34,19 @@ begin
 
         enc_data_in <= "01010101";
         wait for 1 ns;
+        assert enc_data_out = x"52F"
+            report "Test 1 failed" severity error;
 
         dec_data_in <= "110100101111";
         wait for 1 ns;
+        assert dec_data_out = "01010101" and dec_unrecoverable_error = '0'
+            report "Test 2 failed" severity error;
 
         enc_data_in <= "10101010";
         dec_data_in <= "111101011000";
         wait for 1 ns;
+        assert enc_data_out = x"A58" and dec_unrecoverable_error = '1'
+            report "Test 3 failed" severity error;
 
         wait;
     end process;
