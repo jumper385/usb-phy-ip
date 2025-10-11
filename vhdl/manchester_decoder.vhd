@@ -72,6 +72,9 @@ begin
 				byte_ready_r <= '0';
 				rx_received <= '0';
 				tick_count <= tick_count + 1;
+				if bit_cnt = 8 then
+					rx_received <= '1';
+				end if;
 
 				-- detect edge
 				if man_sync(2) /= prev_level then
@@ -91,10 +94,7 @@ begin
 						bit_valid_r <= '1';
 						--prev_bit <= bit_out_r;
 						byte_shift <= byte_shift(BITS-2 downto 0) & man_sync(2);
-						if bit_cnt = 8 then
-							rx_received <= '1';
-							bit_cnt <= bit_cnt + 1;
-						elsif bit_cnt = BITS-1 then
+						if bit_cnt = BITS-1 then
 							byte_out_r <= byte_shift(BITS-2 downto 0) & man_sync(2);
 							byte_ready_r <= '1';
 							bit_cnt <= 0;
@@ -115,10 +115,7 @@ begin
 						end if;
 						bit_valid_r <= '1';
 						byte_shift <= byte_shift(BITS-2 downto 0) & man_sync(2);
-						if bit_cnt = 8 then
-							bit_cnt <= bit_cnt + 1;
-							rx_received <= '1';
-						elsif bit_cnt = BITS-1 then
+						if bit_cnt = BITS-1 then
 							byte_out_r <= byte_shift(BITS-2 downto 0) & man_sync(2);
 							byte_ready_r <= '1';
 							bit_cnt <= 0;

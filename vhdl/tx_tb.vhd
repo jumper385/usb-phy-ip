@@ -32,8 +32,9 @@ PROCESS (wr_clk, reset)
 			w_count <= (OTHERS => '0');
 		ELSIF rising_edge(wr_clk) THEN
 			IF wr_en = '1' THEN
-				IF (w_count(10 downto 0) >= tx_length) THEN
+				IF (w_count(10 downto 0) >= 3) THEN
 					tx_ready <= '1';
+					w_count <= w_count + 1;
 				ELSE
 					w_count <= w_count + 1;
 				END IF;

@@ -148,7 +148,8 @@ component manchester_decoder is
 		bit_valid : out std_logic; -- one-cycle pulse when bit_out is valid
 		bit_out : out std_logic; -- decoded bit for debugging/testing
 		byte_out : out std_logic_vector(BITS-1 downto 0);
-		byte_ready : out std_logic -- pulse when byte_out is valid
+		byte_ready : out std_logic;-- pulse when byte_out is valid
+		rx_received : out std_LOGIC
 	);
 end component;
 
@@ -166,6 +167,7 @@ component deserialiser is
 		rx_done : out STD_LOGIC; -- signal to LT controller
 		reset : in STD_LOGIC; -- global reset
 		byte_ready : in STD_LOGIC; -- byte ready from manchester_decoder
+		lt_wr_ram_clk : out std_logic;
         rx_error : out STD_LOGIC; -- RE to LT controller
         ena_r : in STD_LOGIC; -- enable from LT controller
         tx_error : out STD_LOGIC -- TE to LT controller
@@ -206,12 +208,13 @@ end component;
 	signal rx_error : std_logic := '0';
 	signal tx_error : std_logic := '0';
 	-- signal host : std_logic := '0';
+	signal lt_wr_ram_clk : std_logic;
 	signal rx_done : std_logic := '0';
 	-- signal aligned : std_logic := '0';
 
 
 begin
-tx_length <= "00000111111";
+tx_length <= "00000000111";
 
 ECin : tx_tb
 	generic map(
@@ -273,7 +276,7 @@ man_enc : manchester_encoder
 
 clkd_25 : clk_divider
 	GENERIC map(
-        N => 1
+        N => 3
     )
     PORT map (
         clk_in => clk_120,
@@ -283,7 +286,7 @@ clkd_25 : clk_divider
 
 clkd_50 : clk_divider
 	GENERIC map(
-        N => 0
+        N => 1
     )
     PORT map (
         clk_in => clk_120,
@@ -339,7 +342,7 @@ ram_rx : ram
     port map (
         write_en => ena_r,
         waddr  => rram_waddr_i,
-        wclk  => byte_ready,
+        wclk  => lt_wr_ram_clk,
         raddr  => rram_raddr_i, -- EC side
         rclk   => clk_25,-- EC side
         din  => rram_in,
@@ -360,6 +363,7 @@ man_dec : manchester_decoder
 		bit_valid => bit_valid, -- one-cycle pulse when bit_out is valid
 		bit_out => bit_in, -- decoded bit for debugging/testing
 		byte_out => rx_message,
+		rx_received => rx_received,
 		byte_ready => byte_ready -- pulse when byte_out is valid
 	);
 
@@ -376,6 +380,7 @@ deser : deserialiser
 		wr_addr => rram_waddr_i, -- Address to RX_RAM
 		rx_done => rx_done, -- signal to LT controller
 		reset => reset, -- global reset
+		lt_wr_ram_clk => lt_wr_ram_clk,
 		byte_ready => byte_ready, -- byte ready from manchester_decoder
         rx_error => rx_error, -- RE to LT controller
         ena_r => ena_r, -- enable from LT controller

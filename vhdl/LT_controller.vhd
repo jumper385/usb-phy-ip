@@ -51,7 +51,7 @@ BEGIN
         END IF;
     END PROCESS sync_proc;
 
-    comb_proc : PROCESS (ps, tx_ready, message_sent)
+    comb_proc : PROCESS (ps, tx_ready, message_sent, rx_received, rx_done, tx_error, rx_error,tx_err_sent)
     BEGIN
 	ena_t_s <= '0';
     ena_r_s <= '0';
@@ -68,8 +68,8 @@ BEGIN
                     ns <= TX;
 		            ena_t_s <= '1';
 					-- transition variable changes
-				elsif (rx_received = '1') then
-					ns <= RX;
+		elsif (rx_received = '1') then
+			ns <= RX;
                     ena_r_s <= '1';
 				-- 	-- transition variable changes
                 ELSE
