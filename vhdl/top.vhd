@@ -280,7 +280,7 @@ clkd_50 : clk_divider
         N => 0
     )
     PORT map (
-        clk_in => clk_100,
+        clk_in => clk_120,
         reset => reset,
         clk_out => clk_50 -- Set as the half speed
     );
@@ -342,11 +342,11 @@ ram_rx : ram
 man_dec : manchester_decoder
 	generic map (
 		OVERSAMPLE => 8, -- oversample factor (must match PLL output)
-		BAUD => 18000000, -- Manchester bit rate
+		BAUD => 12000000, -- Manchester bit rate
 		BITS => 12 -- Number of bits being processed out
 	)
 	port map (
-		clk_ovs => clk_100, -- oversample clock from PLL (OVERSAMPLE BAUD)
+		clk_ovs => clk_120, -- oversample clock from PLL (OVERSAMPLE BAUD)
 		reset => reset,
 		man_in => din, -- Manchester encoded input
 		rx_done => rx_done,
@@ -362,7 +362,7 @@ deser : deserialiser
 		mlength => 11 -- Number of bits in the length message (not including the sync)
 	)
 	port map (
-		clk => clk_100,
+		clk => clk_120,
 		rx_message => rram_in,  -- data to load into RAM
 		rx_length => rx_length, -- Received length 
 		byte_in => rx_message, -- byte from manchester_decoder
@@ -388,7 +388,7 @@ deser : deserialiser
     -- clk_tx <= tx_clk;
 	bitt_out <= bit_out;
 	din_rd <= din;
-	bitt_in <= bit_in;
+	bitt_in <= clk_120;
 	dout <= dout_wr;
 	dout_rd <= dout_wr;
 -- tx_clk => clock A
