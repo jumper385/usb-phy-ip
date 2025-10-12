@@ -38,20 +38,21 @@ begin
 		variable err_count : INTEGER := 0;
 		
 	begin
-		If (tx_error = '1') then
-			internal <= '0';
-			parallel <= (others => '0');
-			count := BITS;
-			lencount := mlength-1;
-			length_sent_w <= '0';
-			r_count <= (others => '0');
-		elsif (clk'event and clk= '1') then
+		
+		if (clk'event and clk= '1') then
 			if (reset = '0') then
 				internal <= '0';
 				parallel <= (others => '0');
 				count := BITS;
 				lencount := mlength-1;
 				length_sent_w <= '0';
+			elsif (tx_error = '1') then
+				internal <= '0';
+				parallel <= (others => '0');
+				count := BITS;
+				lencount := mlength-1;
+				length_sent_w <= '0';
+				r_count <= (others => '0');
 			elsif (ena_re = '1') then
 				if (err_count = 13) then
 					err_count := 0;

@@ -79,10 +79,10 @@ BEGIN
                 IF (tx_ready = '1') THEN
                     ns <= TX;
 		            ena_t_s <= '1';
-				ena_man_s <= '1';
+				    ena_man_s <= '1';
 			        ena_r_s <='1';
 					-- transition variable changes
-		elsif (rx_received = '1') then
+		        elsif (rx_received = '1') then
 			        ns <= RX;
                     ena_r_s <= '1';
 				-- 	-- transition variable changes
@@ -90,26 +90,17 @@ BEGIN
                     ns <= ID;
                 END IF;
             WHEN TX =>
-		IF (tx_error = '1') then
-                    ena_t_s <= '0'; 
-			ena_man_s <= '0';
-                    tx_error_cnt <= '1'; 
-                    ena_r_s <= '0';
-                    ns <= TX;
-                elsif (tx_error_cnt = '1') then
-                    ena_t_s <= '1';
-			ena_man_s <= '1';
-			ena_r_s <= '1';
-                    ns <= TX;
+		        IF (tx_error = '1') then
+                   ns <= TE;
                 elsif (message_sent = '1') then
                     ns <= ID;
                     ena_t_s <= '0';
-			ena_man_s <= '0';
+			        ena_man_s <= '0';
                 else
                     ns <= TX;
                     ena_t_s <= '1';
-			ena_man_s <= '1';
-			ena_r_s <= '1';
+			        ena_man_s <= '1';
+			        ena_r_s <= '1';
                 END IF;
 
 
@@ -129,23 +120,23 @@ BEGIN
                 END IF;	
 		    WHEN RE =>
                 If (tx_err_sent = '1') then
-			tx_err_wait <= '1';
-			NS <= RE;
-		        ena_RE_s <= '1';
-			ena_man_s <= '1';
-		elsif (tx_err_wait = '1') then
-			if (rx_received = '1') then
-				NS<= RX;
-			else
-				tx_err_wait <= '1';
-				ena_RE_s <= '1';
-				ena_man_s <= '1';
-                    		NS <= RE;
-			end if;
+			        tx_err_wait <= '1';
+			        NS <= RE;
+		            ena_RE_s <= '1';
+			        ena_man_s <= '1';
+		        elsif (tx_err_wait = '1') then
+			        if (rx_received = '1') then
+				        NS<= RX;
+			        else
+				        tx_err_wait <= '1';
+				        ena_RE_s <= '1';
+				        ena_man_s <= '1';
+                    	NS <= RE;
+			        end if;
                 else
                     	NS <= RE;
-		        ena_RE_s <= '1';
-			ena_man_s <= '1';
+		                ena_RE_s <= '1';
+			            ena_man_s <= '1';
                 end if;
 
                 -- IF (RE_count <3) THEN
@@ -159,7 +150,18 @@ BEGIN
                 --     ns <= HF;
                 -- END IF;
             WHEN TE =>
-                IF (message_sent = '1') then
+                if (tx_error_cnt = '0') then
+                    ena_t_s <= '0'; 
+			        ena_man_s <= '0';
+                    tx_error_cnt <= '1'; 
+                    ena_r_s <= '0';
+                    ns <= TE;
+                elsif (tx_error_cnt = '1') then
+                    ena_t_s <= '1';
+			        ena_man_s <= '1';
+			        ena_r_s <= '1';
+                    ns <= TE;
+                elsif (message_sent = '1') then
                     ns <= ID;
                     ena_t_s <= '0';
                 else
