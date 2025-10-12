@@ -1,7 +1,8 @@
 library IEEE;
 use IEEE.std_logic_1164.all;
 USE ieee.numeric_std.ALL;
-USE IEEE.std_logic_signed.ALL;
+USE ieee.std_logic_unsigned.all;
+
 
 
 entity serialiser is
@@ -18,7 +19,7 @@ entity serialiser is
 		message_sent : out STD_LOGIC;
 		reset : in STD_LOGIC;
 		tx_err_sent : out STD_LOGIC;
-		tx_error : in STD_LOGIC;
+		ena_re : in STD_LOGIC;
 		ena_t : in STD_LOGIC
 	);
 end entity serialiser;
@@ -43,13 +44,13 @@ begin
 				count := BITS;
 				lencount := mlength-1;
 				length_sent_w <= '0';
-			elsif (tx_error = '1') then
+			elsif (ena_re = '1') then
 				if (err_count = 13) then
 					err_count := 0;
 					tx_err_sent_w <= '1';
-					internal <= tx_error;
+					internal <= ena_re;
 				else
-					internal <= tx_error;
+					internal <= ena_re;
 					err_count := err_count + 1;
 				end if;
 			elsif (ena_t = '1') then

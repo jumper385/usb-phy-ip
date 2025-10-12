@@ -62,7 +62,7 @@ component serialiser is
 		message_sent : out STD_LOGIC;
 		reset : in STD_LOGIC;
 		tx_err_sent : out STD_LOGIC;
-		tx_error : in STD_LOGIC;
+		rx_error : in STD_LOGIC;
 		ena_t : in STD_LOGIC
 	);
 end component;
@@ -261,7 +261,7 @@ serial : serialiser
 		message_sent => message_sent,
 		reset => reset,
 		tx_err_sent => tx_err_sent,
-		tx_error => tx_error,
+		rx_error => rx_error,
 		ena_t => ena_t 
 	);
 

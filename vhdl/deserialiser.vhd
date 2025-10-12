@@ -66,7 +66,7 @@ begin
 						wr_ram_clk <= '0';
 					end if;
 				else
-                    case rx_length_wr(10 downto 7) is
+                    		case rx_length_wr(10 downto 7) is
                         when "1111" =>
                             tx_error <= '1';
                         when "1000"|"0010"|"0001"|"0100"|"0011"|"0110"|"0111"|"0101"|"0000" =>
@@ -77,14 +77,13 @@ begin
 								r_count <= r_count + 1;
 								wr_ram_clk <= '0';
 								rx_done_wr <= '1';
-							
+			
                             elsif(byte_ready = '1') then
                                 rx_message <= byte_in;
                                 r_count <= r_count + 1;
 								wr_ram_clk <= '1';
-							else 
-								wr_ram_clk <= '0';
-							end if;
+							else wr_ram_clk <= '0';
+                            end if;
                         when others =>
                             rx_error <= '1';
                     end case;
@@ -101,8 +100,8 @@ begin
 			end if;
 		end if;
 	end process;
-		wr_addr <= r_count;
-		rx_length <= rx_length_wr;
-		lt_wr_ram_clk <= wr_ram_clk;
-		rx_done <= rx_done_wr;
+	wr_addr <= r_count;
+	rx_length <= rx_length_wr;
+	lt_wr_ram_clk <= wr_ram_clk;
+	rx_done <= rx_done_wr;
     end architecture;

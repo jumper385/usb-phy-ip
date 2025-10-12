@@ -18,6 +18,7 @@ ENTITY LT_controller IS
 		-- host : IN STD_LOGIC;
         ena_t : out std_logic;
         ena_r : out std_logic;
+	ena_re : out std_logic;
         message_sent : in std_logic;
         rx_done : in std_logic
         -- aligned : in std_logic
@@ -31,6 +32,7 @@ ARCHITECTURE rtl OF LT_controller IS
     SIGNAL ps, ns : fsm_states := ID;
     SIGNAL ena_t_s : STD_LOGIC := '0';
     SIGNAL ena_r_s : STD_LOGIC := '0';
+    SIGNAL ena_RE_s : std_logic := '0';
 	-- SIGNAL RE_count : INTEGER := 0;
 	-- SIGNAL TE_count : INTEGER := 0;
 	-- count number of error signals
@@ -39,6 +41,7 @@ ARCHITECTURE rtl OF LT_controller IS
 BEGIN
     ena_t <= ena_t_s;
     ena_r <= ena_r_s;
+    ena_re <= ena_RE_s;
 
     sync_proc : PROCESS (fsm_clk, rst)
     BEGIN
@@ -55,6 +58,7 @@ BEGIN
     BEGIN
 	ena_t_s <= '0';
     ena_r_s <= '0';
+	ena_RE_s <= '0';
         CASE ps IS
 
             WHEN RT =>
@@ -67,6 +71,7 @@ BEGIN
                 IF (tx_ready = '1') THEN
                     ns <= TX;
 		            ena_t_s <= '1';
+			ena_r_s <='1';
 					-- transition variable changes
 		elsif (rx_received = '1') then
 			ns <= RX;
@@ -76,7 +81,9 @@ BEGIN
                     ns <= ID;
                 END IF;
             WHEN TX =>
-                IF (message_sent = '1') then
+		        IF (tx_error = '1') then
+			
+                elsif (message_sent = '1') then
                     ns <= ID;
                     ena_t_s <= '0';
                 else
@@ -88,6 +95,7 @@ BEGIN
 			WHEN RX =>
 				if (rx_error = '1') then
 					ns <= RE;
+					ena_RE_s <= '1';
 					-- turn off rx_error somehow
 				elsif (tx_error = '1') then
 					ns <= TE;
@@ -98,10 +106,11 @@ BEGIN
                     ena_r_s <= '1';
                 END IF;	
 		    WHEN RE =>
-                If (tx_err_sent = '1') then
-                    NS <= ID;
+                If (rx_received = '1') then
+                    NS <= RX;
                 else
                     NS <= RE;
+		ena_RE_s <= '1';
                 end if;
 
                 -- IF (RE_count <3) THEN
