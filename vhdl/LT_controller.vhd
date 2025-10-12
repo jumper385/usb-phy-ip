@@ -19,6 +19,7 @@ ENTITY LT_controller IS
         ena_t : out std_logic;
         ena_r : out std_logic;
         ena_re : out std_logic;
+	ena_man : out std_logic;
         message_sent : in std_logic;
         rx_done : in std_logic
         -- aligned : in std_logic
@@ -33,7 +34,9 @@ ARCHITECTURE rtl OF LT_controller IS
     SIGNAL ena_t_s : STD_LOGIC := '0';
     SIGNAL ena_r_s : STD_LOGIC := '0';
     SIGNAL ena_RE_s : std_logic := '0';
+    SIGNAL ena_man_s : std_logic := '0';
     SIGNAL tx_error_cnt : std_logic := '0';
+	SIGNAL tx_err_wait : std_logic := '0';
 	-- SIGNAL RE_count : INTEGER := 0;
 	-- SIGNAL TE_count : INTEGER := 0;
 	-- count number of error signals
@@ -43,6 +46,7 @@ BEGIN
     ena_t <= ena_t_s;
     ena_r <= ena_r_s;
     ena_re <= ena_RE_s;
+    ena_man<= ena_man_s;
 
     sync_proc : PROCESS (fsm_clk, rst)
     BEGIN
@@ -61,6 +65,8 @@ BEGIN
     ena_r_s <= '0';
 	ena_RE_s <= '0';
     tx_error_cnt <= '0';
+	ena_man_s<= '0';
+	tx_err_wait <= '0';
         CASE ps IS
 
             WHEN RT =>
@@ -73,6 +79,7 @@ BEGIN
                 IF (tx_ready = '1') THEN
                     ns <= TX;
 		            ena_t_s <= '1';
+				ena_man_s <= '1';
 			        ena_r_s <='1';
 					-- transition variable changes
 		elsif (rx_received = '1') then
@@ -83,20 +90,26 @@ BEGIN
                     ns <= ID;
                 END IF;
             WHEN TX =>
-		        IF (tx_error = '1') then
+		IF (tx_error = '1') then
                     ena_t_s <= '0'; 
+			ena_man_s <= '0';
                     tx_error_cnt <= '1'; 
                     ena_r_s <= '0';
                     ns <= TX;
                 elsif (tx_error_cnt = '1') then
                     ena_t_s <= '1';
+			ena_man_s <= '1';
+			ena_r_s <= '1';
                     ns <= TX;
                 elsif (message_sent = '1') then
                     ns <= ID;
                     ena_t_s <= '0';
+			ena_man_s <= '0';
                 else
                     ns <= TX;
                     ena_t_s <= '1';
+			ena_man_s <= '1';
+			ena_r_s <= '1';
                 END IF;
 
 
@@ -104,6 +117,7 @@ BEGIN
 				if (rx_error = '1') then
 					ns <= RE;
 					ena_RE_s <= '1';
+					ena_man_s <= '1';
 					-- turn off rx_error somehow
 				elsif (tx_error = '1') then
 					ns <= TE;
@@ -114,11 +128,24 @@ BEGIN
                     ena_r_s <= '1';
                 END IF;	
 		    WHEN RE =>
-                If (rx_received = '1') then
-                    NS <= RX;
+                If (tx_err_sent = '1') then
+			tx_err_wait <= '1';
+			NS <= RE;
+		        ena_RE_s <= '1';
+			ena_man_s <= '1';
+		elsif (tx_err_wait = '1') then
+			if (rx_received = '1') then
+				NS<= RX;
+			else
+				tx_err_wait <= '1';
+				ena_RE_s <= '1';
+				ena_man_s <= '1';
+                    		NS <= RE;
+			end if;
                 else
-                    NS <= RE;
-		            ena_RE_s <= '1';
+                    	NS <= RE;
+		        ena_RE_s <= '1';
+			ena_man_s <= '1';
                 end if;
 
                 -- IF (RE_count <3) THEN

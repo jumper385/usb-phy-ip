@@ -19,6 +19,7 @@ entity serialiser is
 		message_sent : out STD_LOGIC;
 		reset : in STD_LOGIC;
 		tx_err_sent : out STD_LOGIC;
+		tx_error : in std_logic;
 		ena_re : in STD_LOGIC;
 		ena_t : in STD_LOGIC
 	);
@@ -37,7 +38,14 @@ begin
 		variable err_count : INTEGER := 0;
 		
 	begin
-		if (clk'event and clk= '1') then
+		If (tx_error = '1') then
+			internal <= '0';
+			parallel <= (others => '0');
+			count := BITS;
+			lencount := mlength-1;
+			length_sent_w <= '0';
+			r_count <= (others => '0');
+		elsif (clk'event and clk= '1') then
 			if (reset = '0') then
 				internal <= '0';
 				parallel <= (others => '0');

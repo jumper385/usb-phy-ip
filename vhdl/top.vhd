@@ -62,6 +62,7 @@ component serialiser is
 		message_sent : out STD_LOGIC;
 		reset : in STD_LOGIC;
 		tx_err_sent : out STD_LOGIC;
+		tx_error : in std_logic;
 		ena_re : in std_logic;
 		ena_t : in STD_LOGIC
 	);
@@ -111,29 +112,29 @@ end component;
     );
 END component;
 
-	component SB_PLL40_CORE is
-		generic (
+	-- component SB_PLL40_CORE is
+	-- 	generic (
 
-            -- fout = fin * (DIVF + 1) / (2^DIVQ * (DIVR + 1))
+    --         -- fout = fin * (DIVF + 1) / (2^DIVQ * (DIVR + 1))
 
-			FEEDBACK_PATH : string := "SIMPLE";
-			PLLOUT_SELECT : string := "GENCLK";
-			DIVR : integer := 3;
-			DIVF : integer := 43;
-			DIVQ : integer := 5;
-			FILTER_RANGE : integer := 4
-		);
-		port (
-			REFERENCECLK : in std_logic;
-			PLLOUTCORE : out std_logic;
-			PLLOUTGLOBAL : out std_logic;
-			EXTFEEDBACK : in std_logic;
-			DYNAMICDELAY : in std_logic_vector(7 downto 0);
-			LOCK : out std_logic;
-			BYPASS : in std_logic;
-			RESETB : in std_logic
-		);
-	end component SB_PLL40_CORE;
+	-- 		FEEDBACK_PATH : string := "SIMPLE";
+	-- 		PLLOUT_SELECT : string := "GENCLK";
+	-- 		DIVR : integer := 3;
+	-- 		DIVF : integer := 43;
+	-- 		DIVQ : integer := 5;
+	-- 		FILTER_RANGE : integer := 4
+	-- 	);
+	-- 	port (
+	-- 		REFERENCECLK : in std_logic;
+	-- 		PLLOUTCORE : out std_logic;
+	-- 		PLLOUTGLOBAL : out std_logic;
+	-- 		EXTFEEDBACK : in std_logic;
+	-- 		DYNAMICDELAY : in std_logic_vector(7 downto 0);
+	-- 		LOCK : out std_logic;
+	-- 		BYPASS : in std_logic;
+	-- 		RESETB : in std_logic
+	-- 	);
+	-- end component SB_PLL40_CORE;
 
 component manchester_decoder is
 	generic (
@@ -175,16 +176,16 @@ component deserialiser is
 	);
 end component;
 
-component SB_HFOSC is
-		generic (
-			CLKHF_DIV : STRING := "0b00"
-		);
-		port (
-			CLKHFEN : in STD_LOGIC;
-			CLKHFPU : in STD_LOGIC;
-			CLKHF : out STD_LOGIC
-		);
-	end component SB_HFOSC;
+-- component SB_HFOSC is
+-- 		generic (
+-- 			CLKHF_DIV : STRING := "0b00"
+-- 		);
+-- 		port (
+-- 			CLKHFEN : in STD_LOGIC;
+-- 			CLKHFPU : in STD_LOGIC;
+-- 			CLKHF : out STD_LOGIC
+-- 		);
+-- 	end component SB_HFOSC;
 
 	signal tx_ready, tram_rd_en : std_logic := '0';
 	signal tram_in, tram_out, rram_in, rram_out : std_logic_vector (11 downto 0);
@@ -263,6 +264,7 @@ serial : serialiser
 		message_sent => message_sent,
 		reset => reset,
 		tx_err_sent => tx_err_sent,
+		tx_error => tx_error,
 		ena_re => ena_re,
 		ena_t => ena_t 
 	);
@@ -281,7 +283,7 @@ clkd_25 : clk_divider
         N => 3
     )
     PORT map (
-        clk_in => clk_120,
+        clk_in => clk_100,
         reset => reset,
         clk_out => clk_25 -- Set as the quarter speed
     );
@@ -291,7 +293,7 @@ clkd_50 : clk_divider
         N => 1
     )
     PORT map (
-        clk_in => clk_120,
+        clk_in => clk_100,
         reset => reset,
         clk_out => clk_50 -- Set as the half speed
     );
@@ -318,24 +320,24 @@ lt_fsm : LT_controller
 		-- aligned => aligned
     );
 
-pll_200 : component SB_PLL40_CORE
-generic map(
+-- pll_200 : component SB_PLL40_CORE
+-- generic map(
 
-	-- fout = fin * (DIVF + 1) / (2^DIVQ * (DIVR + 1))
-	DIVR => 11,
-	DIVF => 1,
-	DIVQ => 4
-)
-port map (
-	REFERENCECLK => clk_100,
-	PLLOUTCORE => clk_120,
-	PLLOUTGLOBAL => open,
-	EXTFEEDBACK => '0',
-	DYNAMICDELAY => (others => '0'),
-	LOCK => open,
-	BYPASS => '0',
-	RESETB => reset
-);
+-- 	-- fout = fin * (DIVF + 1) / (2^DIVQ * (DIVR + 1))
+-- 	DIVR => 11,
+-- 	DIVF => 1,
+-- 	DIVQ => 4
+-- )
+-- port map (
+-- 	REFERENCECLK => clk_100,
+-- 	PLLOUTCORE => clk_120,
+-- 	PLLOUTGLOBAL => open,
+-- 	EXTFEEDBACK => '0',
+-- 	DYNAMICDELAY => (others => '0'),
+-- 	LOCK => open,
+-- 	BYPASS => '0',
+-- 	RESETB => reset
+-- );
 
 ram_rx : ram 
     generic map (

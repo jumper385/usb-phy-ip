@@ -56,7 +56,9 @@ begin
 						wr_ram_clk <= '0';
 					end if;
 				elsif (first_byte = '0') then
-					if byte_ready = '1' then
+					if (rx_length_wr(10 downto 7) = "1111") then
+                            			tx_error <= '1';
+					elsif byte_ready = '1' then
                 			-- define the first byte
 					rx_message <= byte_in;
                         		first_byte <= '1';
@@ -67,8 +69,7 @@ begin
 					end if;
 				else
                     		case rx_length_wr(10 downto 7) is
-                        when "1111" =>
-                            tx_error <= '1';
+                        
                         when "1000"|"0010"|"0001"|"0100"|"0011"|"0110"|"0111"|"0101"|"0000" =>
                             if (r_count = rx_length_wr) then
                                 r_count <= r_count + 1;
