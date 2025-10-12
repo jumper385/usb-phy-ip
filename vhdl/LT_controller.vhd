@@ -18,7 +18,7 @@ ENTITY LT_controller IS
 		-- host : IN STD_LOGIC;
         ena_t : out std_logic;
         ena_r : out std_logic;
-	ena_re : out std_logic;
+        ena_re : out std_logic;
         message_sent : in std_logic;
         rx_done : in std_logic
         -- aligned : in std_logic
@@ -33,6 +33,7 @@ ARCHITECTURE rtl OF LT_controller IS
     SIGNAL ena_t_s : STD_LOGIC := '0';
     SIGNAL ena_r_s : STD_LOGIC := '0';
     SIGNAL ena_RE_s : std_logic := '0';
+    SIGNAL tx_error_cnt : std_logic := '0';
 	-- SIGNAL RE_count : INTEGER := 0;
 	-- SIGNAL TE_count : INTEGER := 0;
 	-- count number of error signals
@@ -54,11 +55,12 @@ BEGIN
         END IF;
     END PROCESS sync_proc;
 
-    comb_proc : PROCESS (ps, tx_ready, message_sent, rx_received, rx_done, tx_error, rx_error,tx_err_sent)
+    comb_proc : PROCESS (ps, tx_ready, message_sent, rx_received, rx_done, tx_error, rx_error, tx_err_sent, tx_error_cnt)
     BEGIN
 	ena_t_s <= '0';
     ena_r_s <= '0';
 	ena_RE_s <= '0';
+    tx_error_cnt <= '0';
         CASE ps IS
 
             WHEN RT =>
@@ -82,7 +84,11 @@ BEGIN
                 END IF;
             WHEN TX =>
 		        IF (tx_error = '1') then
-			
+                    ena_t_s <= '0'; 
+                    tx_error_cnt <= '1'; 
+                    ena_r_s <= '0';
+                elsif (tx_error_cnt = '1') then
+                    ena_t_s <= '1';
                 elsif (message_sent = '1') then
                     ns <= ID;
                     ena_t_s <= '0';
@@ -110,7 +116,7 @@ BEGIN
                     NS <= RX;
                 else
                     NS <= RE;
-		ena_RE_s <= '1';
+		            ena_RE_s <= '1';
                 end if;
 
                 -- IF (RE_count <3) THEN

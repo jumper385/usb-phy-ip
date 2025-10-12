@@ -62,7 +62,7 @@ component serialiser is
 		message_sent : out STD_LOGIC;
 		reset : in STD_LOGIC;
 		tx_err_sent : out STD_LOGIC;
-		rx_error : in STD_LOGIC;
+		ena_re : in STD_LOGIC;
 		ena_t : in STD_LOGIC
 	);
 end component;
@@ -105,6 +105,7 @@ end component;
         message_sent : in std_logic;
         -- aligned : in std_logic
 		ena_r : out std_logic;
+		ena_re : out std_logic;
         rx_done : in std_logic
 
     );
@@ -191,7 +192,7 @@ end component;
  	signal tram_raddr_i,tram_waddr_i, rram_waddr_i, rram_raddr_i : std_logic_vector (10 downto 0);
 	signal tx_length : std_logic_vector (10 downto 0) := "00001111111";
 	signal rx_length : std_logic_vector (10 downto 0);
-	signal ena_t, ena_r : std_logic;
+	signal ena_t, ena_r, ena_re : std_logic;
 	signal message_sent : std_logic := '0';
     signal bit_out : std_logic;
 	signal clk_25, clk_50, clk_120 : std_logic;
@@ -261,7 +262,7 @@ serial : serialiser
 		message_sent => message_sent,
 		reset => reset,
 		tx_err_sent => tx_err_sent,
-		rx_error => rx_error,
+		ena_re => ena_re,
 		ena_t => ena_t 
 	);
 
@@ -310,6 +311,7 @@ lt_fsm : LT_controller
 		-- host => host,
         ena_t => ena_t,
 		ena_r => ena_r,
+		ena_re => ena_re,
         message_sent => message_sent,
 		rx_done => rx_done
 		-- aligned => aligned
