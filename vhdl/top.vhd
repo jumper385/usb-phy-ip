@@ -175,16 +175,16 @@ component deserialiser is
 	);
 end component;
 
--- component SB_HFOSC is
--- 		generic (
--- 			CLKHF_DIV : STRING := "0b00"
--- 		);
--- 		port (
--- 			CLKHFEN : in STD_LOGIC;
--- 			CLKHFPU : in STD_LOGIC;
--- 			CLKHF : out STD_LOGIC
--- 		);
--- 	end component SB_HFOSC;
+component SB_HFOSC is
+		generic (
+			CLKHF_DIV : STRING := "0b00"
+		);
+		port (
+			CLKHFEN : in STD_LOGIC;
+			CLKHFPU : in STD_LOGIC;
+			CLKHF : out STD_LOGIC
+		);
+	end component SB_HFOSC;
 
 	signal tx_ready, tram_rd_en : std_logic := '0';
 	signal tram_in, tram_out, rram_in, rram_out : std_logic_vector (11 downto 0);

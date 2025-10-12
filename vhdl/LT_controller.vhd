@@ -73,10 +73,10 @@ BEGIN
                 IF (tx_ready = '1') THEN
                     ns <= TX;
 		            ena_t_s <= '1';
-			ena_r_s <='1';
+			        ena_r_s <='1';
 					-- transition variable changes
 		elsif (rx_received = '1') then
-			ns <= RX;
+			        ns <= RX;
                     ena_r_s <= '1';
 				-- 	-- transition variable changes
                 ELSE
@@ -87,8 +87,10 @@ BEGIN
                     ena_t_s <= '0'; 
                     tx_error_cnt <= '1'; 
                     ena_r_s <= '0';
+                    ns <= TX;
                 elsif (tx_error_cnt = '1') then
                     ena_t_s <= '1';
+                    ns <= TX;
                 elsif (message_sent = '1') then
                     ns <= ID;
                     ena_t_s <= '0';
