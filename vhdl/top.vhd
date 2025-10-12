@@ -62,7 +62,7 @@ component serialiser is
 		message_sent : out STD_LOGIC;
 		reset : in STD_LOGIC;
 		tx_err_sent : out STD_LOGIC;
-		ena_re : in STD_LOGIC;
+		ena_re : in std_logic;
 		ena_t : in STD_LOGIC
 	);
 end component;
@@ -100,12 +100,12 @@ end component;
 		rx_error : IN STD_LOGIC;
 		tx_err_sent : IN STD_LOGIC;
 		tx_error : IN STD_LOGIC;
+		ena_re : out std_logic;
 		-- host : IN STD_LOGIC;
         ena_t : out std_logic;
         message_sent : in std_logic;
         -- aligned : in std_logic
 		ena_r : out std_logic;
-		ena_re : out std_logic;
         rx_done : in std_logic
 
     );
@@ -192,7 +192,7 @@ component SB_HFOSC is
  	signal tram_raddr_i,tram_waddr_i, rram_waddr_i, rram_raddr_i : std_logic_vector (10 downto 0);
 	signal tx_length : std_logic_vector (10 downto 0) := "00001111111";
 	signal rx_length : std_logic_vector (10 downto 0);
-	signal ena_t, ena_r, ena_re : std_logic;
+	signal ena_t, ena_r : std_logic;
 	signal message_sent : std_logic := '0';
     signal bit_out : std_logic;
 	signal clk_25, clk_50, clk_120 : std_logic;
@@ -208,6 +208,7 @@ component SB_HFOSC is
 	-- 	-- Add error signals that suggest to go to idle state?
 	signal rx_error : std_logic := '0';
 	signal tx_error : std_logic := '0';
+	signal ena_re : std_logic := '0';
 	-- signal host : std_logic := '0';
 	signal lt_wr_ram_clk : std_logic;
 	signal rx_done : std_logic := '0';
