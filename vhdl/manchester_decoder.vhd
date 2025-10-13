@@ -58,7 +58,7 @@ begin
 				bit_out_r <= '0';
 			else
 				-- shift register for metastability protection
-				man_sync <= man_sync(1 downto 0) & not man_in;
+				man_sync <= man_sync(1 downto 0) & man_in;
 
 				-- default outputs
 				bit_valid_r <= '0';

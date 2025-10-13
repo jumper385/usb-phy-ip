@@ -348,7 +348,7 @@ man_dec : manchester_decoder
 	port map (
 		clk_ovs => clk_100, -- oversample clock from PLL (OVERSAMPLE BAUD)
 		reset => reset,
-		man_in => din, -- Manchester encoded input
+		man_in => not din, -- Manchester encoded input
 		rx_done => rx_done,
 		bit_valid => bit_valid, -- one-cycle pulse when bit_out is valid
 		bit_out => bit_in, -- decoded bit for debugging/testing
@@ -387,7 +387,7 @@ deser : deserialiser
     
     -- clk_tx <= tx_clk;
 	bitt_out <= bit_out;
-	din_rd <= din;
+	din_rd <= not din;
 	bitt_in <= bit_in;
 	dout <= dout_wr;
 	dout_rd <= dout_wr;
