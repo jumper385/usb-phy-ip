@@ -73,7 +73,7 @@ begin
 
 					-- classify interval
 					if
-					interval > (OVERSAMPLE / 2 - 3) and interval < (OVERSAMPLE / 2 + 2) and
+					interval > (OVERSAMPLE / 2 - 3) and interval < (OVERSAMPLE / 2 + 1) and
 						prev_level /= bit_out_r then
 						-- half-bit interval
 						if prev_level = '0' and man_sync(2) = '1' then
@@ -98,7 +98,7 @@ begin
 
 
 					elsif
-					interval > (OVERSAMPLE - 3) and interval < (OVERSAMPLE + 3) and prev_level
+					interval > (OVERSAMPLE - 3) and interval < (OVERSAMPLE + 2) and prev_level
 						= bit_out_r then
 						-- full-bit interval
 						if prev_level = '0' and man_sync(2) = '1' then
