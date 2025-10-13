@@ -141,6 +141,7 @@ component manchester_decoder is
 		clk_ovs : in std_logic; -- oversample clock from PLL (OVERSAMPLE BAUD)
 		reset : in std_logic;
 		man_in : in std_logic; -- Manchester encoded input
+		rx_done : in std_logic;
 		bit_valid : out std_logic; -- one-cycle pulse when bit_out is valid
 		bit_out : out std_logic; -- decoded bit for debugging/testing
 		byte_out : out std_logic_vector(BITS-1 downto 0);
@@ -348,6 +349,7 @@ man_dec : manchester_decoder
 		clk_ovs => clk_100, -- oversample clock from PLL (OVERSAMPLE BAUD)
 		reset => reset,
 		man_in => din, -- Manchester encoded input
+		rx_done => rx_done,
 		bit_valid => bit_valid, -- one-cycle pulse when bit_out is valid
 		bit_out => bit_in, -- decoded bit for debugging/testing
 		byte_out => rx_message,
