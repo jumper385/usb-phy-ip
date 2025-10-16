@@ -18,8 +18,7 @@ entity serialiser is
 		rd_addr : out STD_LOGIC_VECTOR (mlength-1 downto 0);
 		message_sent : out STD_LOGIC;
 		reset : in STD_LOGIC;
-		tx_err_sent : out STD_LOGIC;
-		tx_error : in std_logic;
+		re_timeout : out STD_LOGIC;
 		ena_re : in STD_LOGIC;
 		ena_t : in STD_LOGIC
 	);
@@ -30,7 +29,7 @@ architecture arch of serialiser is
 	signal parallel : STD_LOGIC_VECTOR(BITS-1 downto 0) := (others => '0');
 	signal length_sent_w : STD_LOGIC;
 	signal r_count : STD_LOGIC_VECTOR (mlength-1 downto 0) := (others => '0');
-	signal tx_err_sent_w : std_logic;
+	signal rx_err_timeout : std_logic;
 begin
 	process (clk) is
 		variable count : INTEGER range -1 to BITS;
@@ -46,17 +45,14 @@ begin
 				count := BITS;
 				lencount := mlength-1;
 				length_sent_w <= '0';
-			elsif (tx_error = '1') then
-				internal <= '0';
-				parallel <= (others => '0');
-				count := BITS;
-				lencount := mlength-1;
-				length_sent_w <= '0';
+				err_count := 0;
 				r_count <= (others => '0');
+				message_sent <= '0';
+				rx_err_timeout <= '0';
 			elsif (ena_re = '1') then
-				if (err_count = 13) then
+				if (err_count = 12500) then
 					err_count := 0;
-					tx_err_sent_w <= '1';
+					rx_err_timeout <= '1';
 					internal <= ena_re;
 				else
 					internal <= ena_re;
@@ -95,16 +91,19 @@ begin
 					end if;
 				end if;
 			else
-				lencount := mlength-1;
-				count := BITS;
-				length_sent_w <= '0';
 				internal <= '0';
-				message_sent <='0';
-				tx_err_sent_w <= '0';
+				parallel <= (others => '0');
+				count := BITS;
+				lencount := mlength-1;
+				length_sent_w <= '0';
+				err_count := 0;
+				r_count <= (others => '0');
+				message_sent <= '0';
+				rx_err_timeout <= '0';
 			end if;
 		end if;
 	end process;
 	rd_addr <= r_count;
 	dout <= internal;
-	tx_err_sent <= tx_err_sent_w;
+	re_timeout <= rx_err_timeout;
 end architecture arch;

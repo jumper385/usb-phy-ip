@@ -61,8 +61,7 @@ component serialiser is
 		rd_addr : out STD_LOGIC_VECTOR (mlength-1 downto 0);
 		message_sent : out STD_LOGIC;
 		reset : in STD_LOGIC;
-		tx_err_sent : out STD_LOGIC;
-		tx_error : in std_logic;
+		re_timeout : out STD_LOGIC;
 		ena_re : in std_logic;
 		ena_t : in STD_LOGIC
 	);
@@ -99,14 +98,13 @@ end component;
 		-- device_align : IN STD_LOGIC;
 		-- Add error signals that suggest to go to idle state?
 		rx_error : IN STD_LOGIC;
-		tx_err_sent : IN STD_LOGIC;
+		re_timeout : in STD_LOGIC;
 		tx_error : IN STD_LOGIC;
 		ena_re : out std_logic;
-		-- host : IN STD_LOGIC;
         ena_t : out std_logic;
-        message_sent : in std_logic;
-        -- aligned : in std_logic
 		ena_r : out std_logic;
+		ena_man : out std_logic;
+        message_sent : in std_logic;
         rx_done : in std_logic
 
     );
@@ -193,7 +191,7 @@ end component;
  	signal tram_raddr_i,tram_waddr_i, rram_waddr_i, rram_raddr_i : std_logic_vector (10 downto 0);
 	signal tx_length : std_logic_vector (10 downto 0) := "00001111111";
 	signal rx_length : std_logic_vector (10 downto 0);
-	signal ena_t, ena_r : std_logic;
+	signal ena_t, ena_r, ena_re, ena_man : std_logic;
 	signal message_sent : std_logic := '0';
     signal bit_out : std_logic;
 	signal clk_25, clk_50, clk_120 : std_logic;
@@ -203,13 +201,12 @@ end component;
 	signal dout_wr : std_logic;
 	signal rx_message : STD_LOGIC_VECTOR (11 downto 0);	
 	signal rx_received : std_logic := '0'; -- indication from the RX line that a light message is incoming
-	signal tx_err_sent : STD_LOGIC;
+	signal re_timeout : STD_LOGIC;
 	-- signal host_align : std_logic := '0';
 	-- signal device_align : std_logic := '0';
 	-- 	-- Add error signals that suggest to go to idle state?
 	signal rx_error : std_logic := '0';
 	signal tx_error : std_logic := '0';
-	signal ena_re : std_logic := '0';
 	-- signal host : std_logic := '0';
 	signal lt_wr_ram_clk : std_logic;
 	signal rx_done : std_logic := '0';
@@ -263,8 +260,7 @@ serial : serialiser
 		rd_addr => tram_raddr_i,
 		message_sent => message_sent,
 		reset => reset,
-		tx_err_sent => tx_err_sent,
-		tx_error => tx_error,
+		re_timeout => re_timeout,
 		ena_re => ena_re,
 		ena_t => ena_t 
 	);
@@ -273,7 +269,7 @@ man_enc : manchester_encoder
     port map (
         clk => clk_50, 
         reset => reset,
-        v => ena_t,
+        v => ena_man,
         d => bit_out,
         y => dout_wr
     );
@@ -309,12 +305,13 @@ lt_fsm : LT_controller
 		-- device_align => device_align,
 		-- -- Add error signals that suggest to go to idle state?
 		rx_error => rx_error,
-		tx_err_sent => tx_err_sent,
+		re_timeout => re_timeout,
 		tx_error => tx_error,
 		-- host => host,
         ena_t => ena_t,
 		ena_r => ena_r,
 		ena_re => ena_re,
+		ena_man => ena_man,
         message_sent => message_sent,
 		rx_done => rx_done
 		-- aligned => aligned

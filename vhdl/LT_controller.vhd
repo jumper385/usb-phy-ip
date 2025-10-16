@@ -9,34 +9,27 @@ ENTITY LT_controller IS
 		-- Indicators from other blocks to trigger states
         tx_ready : IN STD_LOGIC; -- indication from EC to start reading TX_RAM and transmit
 		rx_received : IN STD_LOGIC; -- indication from the RX line that a light message is incoming
-		-- host_align : IN STD_LOGIC;
-		-- device_align : IN STD_LOGIC;
-		-- Add error signals that suggest to go to idle state?
 		rx_error : in STD_LOGIC;
-        tx_err_sent : IN STD_LOGIC;
+        re_timeout : IN STD_LOGIC;
 		tx_error : in STD_LOGIC;
-		-- host : IN STD_LOGIC;
         ena_t : out std_logic;
         ena_r : out std_logic;
         ena_re : out std_logic;
-	ena_man : out std_logic;
+	    ena_man : out std_logic;
         message_sent : in std_logic;
         rx_done : in std_logic
-        -- aligned : in std_logic
 
     );
 END ENTITY LT_controller;
 
 ARCHITECTURE rtl OF LT_controller IS
 
-    TYPE fsm_states IS (RT, ID, TX, RX, RE, TE); --, HF, HA, DA); -- reset, idle, transmitting, receiving, receive error, transmit error, hard fault, host align, device align
+    TYPE fsm_states IS (RT, ID, TX, RX, RE, RE2, TE1, TE2, HF); --, HF, HA, DA); -- reset, idle, transmitting, receiving, receive error, transmit error, hard fault, host align, device align
     SIGNAL ps, ns : fsm_states := ID;
     SIGNAL ena_t_s : STD_LOGIC := '0';
     SIGNAL ena_r_s : STD_LOGIC := '0';
     SIGNAL ena_RE_s : std_logic := '0';
     SIGNAL ena_man_s : std_logic := '0';
-    SIGNAL tx_error_cnt : std_logic := '0';
-	SIGNAL tx_err_wait : std_logic := '0';
 	-- SIGNAL RE_count : INTEGER := 0;
 	-- SIGNAL TE_count : INTEGER := 0;
 	-- count number of error signals
@@ -59,14 +52,12 @@ BEGIN
         END IF;
     END PROCESS sync_proc;
 
-    comb_proc : PROCESS (ps, tx_ready, message_sent, rx_received, rx_done, tx_error, rx_error, tx_err_sent, tx_error_cnt)
+    comb_proc : PROCESS (ps, tx_ready, message_sent, rx_received, rx_done, tx_error, rx_error, re_timeout)
     BEGIN
 	ena_t_s <= '0';
     ena_r_s <= '0';
 	ena_RE_s <= '0';
-    tx_error_cnt <= '0';
 	ena_man_s<= '0';
-	tx_err_wait <= '0';
         CASE ps IS
 
             WHEN RT =>
@@ -91,7 +82,7 @@ BEGIN
                 END IF;
             WHEN TX =>
 		        IF (tx_error = '1') then
-                   ns <= TE;
+                   ns <= TE1;
                 elsif (message_sent = '1') then
                     ns <= ID;
                     ena_t_s <= '0';
@@ -111,7 +102,7 @@ BEGIN
 					ena_man_s <= '1';
 					-- turn off rx_error somehow
 				elsif (tx_error = '1') then
-					ns <= TE;
+					ns <= TE1;
                 ELSIF (rx_done = '1') THEN
                     ns <= ID;
                 ELSE
@@ -119,76 +110,41 @@ BEGIN
                     ena_r_s <= '1';
                 END IF;	
 		    WHEN RE =>
-                If (tx_err_sent = '1') then
-			        tx_err_wait <= '1';
-			        NS <= RE;
-		            ena_RE_s <= '1';
-			        ena_man_s <= '1';
-		        elsif (tx_err_wait = '1') then
-			        if (rx_received = '1') then
-				        NS<= RX;
-			        else
-				        tx_err_wait <= '1';
-				        ena_RE_s <= '1';
-				        ena_man_s <= '1';
-                    	NS <= RE;
-			        end if;
+                ns <= RE2;
+            WHEN RE2 =>
+                IF (re_timeout = '1') then
+                    ns <= HF;
+                ELSIF (rx_done = '1') then
+                    ns <= ID;
                 else
-                    	NS <= RE;
-		                ena_RE_s <= '1';
-			            ena_man_s <= '1';
-                end if;
-
-                -- IF (RE_count <3) THEN
-				-- 	-- transition variable changes
-				-- 	-- make message the TX_error message
-				-- 	-- setup for transmit
-				-- 	-- turn off rx_error signal
-
-                --     ns <= TX;
-                -- ELSE
-                --     ns <= HF;
-                -- END IF;
-            WHEN TE =>
-                if (tx_error_cnt = '0') then
-                    ena_t_s <= '0'; 
+                    ena_re_s <= '1';
+                    ena_man_s <= '1';
+                    ena_r_s <= '1';
+                    ns <= RE2;
+                END IF;
+            WHEN TE1 =>
+                    ns <= TE2;
+            WHEN TE2 =>
+                if (message_sent = '1') then
+                    ns <= ID;
+                    ena_t_s <= '0';
 			        ena_man_s <= '0';
-                    tx_error_cnt <= '1'; 
-                    ena_r_s <= '0';
-                    ns <= TE;
-                elsif (tx_error_cnt = '1') then
+                else
+                    ns <= TE2;
                     ena_t_s <= '1';
 			        ena_man_s <= '1';
 			        ena_r_s <= '1';
-                    ns <= TE;
-                elsif (message_sent = '1') then
-                    ns <= ID;
-                    ena_t_s <= '0';
-                else
-                    ns <= TE;
-                    ena_t_s <= '1';
                 END IF;
 
 
-                
-                -- IF (TE_count < 3) THEN
-				-- 	-- transition variable changes
-				-- 	-- enable TX for a retransmit
-				-- 	-- indicate to other controllers TX retransmit in action
-				-- 	-- Turn tx_error off
-
-                --     ns <= TX;
+		     WHEN HF =>
+             ns <= ID;
+					-- tell higher level controller in hard fault then send to align state?
+                -- IF (host = '1') THEN
+                --     ns <= HA;
                 -- ELSE
-
-                --     ns <= HF;
+                --     ns <= DA;
                 -- END IF;
-		    --  WHEN HF =>
-			-- 		-- tell higher level controller in hard fault then send to align state?
-            --     IF (host = '1') THEN
-            --         ns <= HA;
-            --     ELSE
-            --         ns <= DA;
-            --     END IF;
 			-- WHEN HA =>
             --     IF (aligned = '1') THEN
             --         ns <= ID;

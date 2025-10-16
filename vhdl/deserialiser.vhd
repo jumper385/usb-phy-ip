@@ -39,65 +39,70 @@ begin
 		if (clk'event and clk= '1') then
 			if (reset = '0') then
 				internal <= '0';
-                		r_count <= (others => '0');
+                r_count <= (others => '0');
 				length_received_w <= '0';
-				wr_ram_clk <= '1';
+				rx_length_wr <= (others => '0');
+				wr_ram_clk <= '0';
 				rx_done_wr <= '0';
+				first_byte <= '0';
+				rx_error <= '0';
+				tx_error <= '0';
+				r_count <= (others => '0');
 								
 			elsif (ena_r ='1') then -- once the length is sent, start sending the message
 				if (length_received_w = '0') then
 					if byte_ready = '1' then
-                			-- define the length
-                    			rx_length_wr <= byte_in (mlength-1 downto 0);
-                        		length_received_w <= '1';
-                        		r_count <= (others => '0');
-					wr_ram_clk <= '1';
+                		-- define the length
+                    	rx_length_wr <= byte_in (mlength-1 downto 0);
+                        length_received_w <= '1';
+                        r_count <= (others => '0');
+						wr_ram_clk <= '1';
 					else
 						wr_ram_clk <= '0';
 					end if;
 				elsif (first_byte = '0') then
-					if (rx_length_wr(10 downto 7) = "1111") then
-                            			tx_error <= '1';
-					elsif byte_ready = '1' then
-                			-- define the first byte
-					rx_message <= byte_in;
-                        		first_byte <= '1';
-                        		r_count <= (others => '0');
-					wr_ram_clk <= '1';
-					else
-						wr_ram_clk <= '0';
-					end if;
-				else
-                    		case rx_length_wr(10 downto 7) is
-                        
+					case rx_length_wr(10 downto 7) is
+						when "1111" =>
+							tx_error <= '1';
                         when "1000"|"0010"|"0001"|"0100"|"0011"|"0110"|"0111"|"0101"|"0000" =>
-                            if (r_count = rx_length_wr) then
-                                r_count <= r_count + 1;
-								wr_ram_clk <= '0';
-							elsif (r_count = rx_length_wr + 1) then
-								r_count <= r_count + 1;
-								wr_ram_clk <= '0';
-								rx_done_wr <= '1';
-			
-                            elsif(byte_ready = '1') then
-                                rx_message <= byte_in;
-                                r_count <= r_count + 1;
+							if byte_ready = '1' then
+								-- define the first byte
+								rx_message <= byte_in;
+								first_byte <= '1';
+								r_count <= (others => '0');
 								wr_ram_clk <= '1';
-							else wr_ram_clk <= '0';
+							else 
+								wr_ram_clk <= '0';
                             end if;
                         when others =>
                             rx_error <= '1';
                     end case;
+				else
+					if (r_count = rx_length_wr) then
+						r_count <= r_count + 1;
+						wr_ram_clk <= '0';
+					elsif (r_count = rx_length_wr + 1) then
+						r_count <= r_count + 1;
+						wr_ram_clk <= '0';
+						rx_done_wr <= '1';
+					elsif(byte_ready = '1') then
+						rx_message <= byte_in;
+						r_count <= r_count + 1;
+						wr_ram_clk <= '1';
+					else wr_ram_clk <= '0';
+					end if;
 				end if;
 			else
-				
-				rx_error <= '0';
-                tx_error <= '0';
-                length_received_w <= '0';
-				first_byte <= '0';
+				internal <= '0';
                 r_count <= (others => '0');
-				rx_done_wr <='0';
+				length_received_w <= '0';
+				rx_length_wr <= (others => '0');
 				wr_ram_clk <= '0';
+				rx_done_wr <= '0';
+				first_byte <= '0';
+				rx_error <= '0';
+				tx_error <= '0';
+				r_count <= (others => '0');
 			end if;
 		end if;
 	end process;
