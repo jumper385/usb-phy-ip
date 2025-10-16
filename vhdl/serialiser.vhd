@@ -50,7 +50,10 @@ begin
 				message_sent <= '0';
 				rx_err_timeout <= '0';
 			elsif (ena_re = '1') then
-				if (err_count = 12500) then
+				if (err_count = 0) then
+					internal <= '0';
+					err_count := err_count + 1;
+				elsif (err_count = 12500) then
 					err_count := 0;
 					rx_err_timeout <= '1';
 					internal <= ena_re;

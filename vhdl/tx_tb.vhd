@@ -35,6 +35,8 @@ PROCESS (wr_clk, reset)
 				IF (w_count(10 downto 0) >= 3) THEN
 					tx_ready <= '1';
 					w_count <= w_count + 1;
+				ELSIF (w_count (10 downto 0) = tx_length) THEN
+					w_count <= (OTHERS => '0');
 				ELSE
 					w_count <= w_count + 1;
 				END IF;

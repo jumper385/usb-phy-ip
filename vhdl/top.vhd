@@ -5,6 +5,7 @@ entity top is
 	port (
 		tram_wr_en : in std_logic;
 		reset : in std_logic;
+		--tx_length : in std_logic_vector (10 downto 0);
 		bitt_out : out std_logic; -- bit
 		bitt_in : out std_logic; -- bit received
 		dout : out std_logic; -- manchester tx
@@ -189,8 +190,8 @@ end component;
 	signal tram_in, tram_out, rram_in, rram_out : std_logic_vector (11 downto 0);
 	-- signal tx_clk : std_logic;
  	signal tram_raddr_i,tram_waddr_i, rram_waddr_i, rram_raddr_i : std_logic_vector (10 downto 0);
-	signal tx_length : std_logic_vector (10 downto 0) := "00001111111";
 	signal rx_length : std_logic_vector (10 downto 0);
+	signal tx_length : std_logic_vector (10 downto 0);
 	signal ena_t, ena_r, ena_re, ena_man : std_logic;
 	signal message_sent : std_logic := '0';
     signal bit_out : std_logic;
@@ -214,8 +215,7 @@ end component;
 
 
 begin
-tx_length <= "00000000111";
-
+tx_length <= "00001111111";
 ECin : tx_tb
 	generic map(
 	BITS => 12,
@@ -360,7 +360,7 @@ man_dec : manchester_decoder
 	port map (
 		clk_ovs => clk_100, -- oversample clock from PLL (OVERSAMPLE BAUD)
 		reset => reset,
-		man_in => din, -- Manchester encoded input
+		man_in => not din, -- Manchester encoded input
 		rx_done => rx_done,
 		bit_valid => bit_valid, -- one-cycle pulse when bit_out is valid
 		bit_out => bit_in, -- decoded bit for debugging/testing
@@ -401,7 +401,7 @@ deser : deserialiser
     
     -- clk_tx <= tx_clk;
 	bitt_out <= bit_out;
-	din_rd <= din;
+	din_rd <= not din;
 	bitt_in <= bit_in;
 	dout <= dout_wr;
 	dout_rd <= dout_wr;
